@@ -1,0 +1,120 @@
+# Copy this file to the root of the project where the agent is working:
+#   jira-routing.yml
+#
+# This file is only for non-secret routing metadata. Do not store Jira tokens,
+# passwords, API keys, or private credentials here.
+
+projects:
+  # Rename this key to a short project/team alias the agent can reference.
+  dsml:
+    # Required: Jira project key, for example DSML, PLAT, RH.
+    jira_project: DSML
+
+    # Optional: default components when a ticket matches this project but not a
+    # more specific epic/component route.
+    default_components:
+      - CI
+
+    # Optional: words the user might use when referring to this project/team.
+    aliases:
+      - dsml
+      - data science machine learning
+
+    # Optional: scrum includes Sprint and Story Points in drafts; kanban omits them.
+    # Use "scrum" or "kanban". Omit if unknown; the agent should ask.
+    workflow_type: scrum
+
+    # Optional defaults used when the user does not specify these fields.
+    default_issue_type: Task
+    default_priority: Medium
+
+    # Optional: board-visible status to move created tickets into after approval.
+    # Example: use Backlog when the board does not show Jira's default To Do status.
+    initial_status: Backlog
+
+    # Optional assignee hint.
+    # Use currentUser() when tickets should be assigned to the authenticated Jira user.
+    # If your Jira API requires accountId, fill it in after looking it up.
+    default_assignee: currentUser()
+    # default_assignee:
+    #   display_name: Priyanka Mishra
+    #   account_id: null
+
+    # Optional: named epics/parents for routing tickets by topic.
+    epics:
+      segmentation:
+        # Replace with the real Segmentation epic or parent key.
+        key: PROJ-111
+        summary: Segmentation Improvements/Maintenance
+        initial_status: Backlog
+        components:
+          - segmentation
+        aliases:
+          - segmentation
+          - segment
+          - audience segmentation
+
+      search:
+        # Replace with the real Jarvis epic or parent key.
+        key: PROJ-222
+        summary: Jarvis | Improvements and Maintenance
+        components:
+          - search
+        aliases:
+          - search
+          - jarvis
+
+      stackforge:
+        # Replace with the real Stackforge epic or parent key.
+        key: PROJ-333
+        summary: StackForge AI : MVP
+        components:
+          - CI
+          - search
+        aliases:
+          - stackforge
+          - stack forge
+
+  # Add another project block when tickets should route to a different Jira project.
+  # another_project:
+  #   jira_project: ABC
+  #   default_components:
+  #     - backend
+  #   aliases:
+  #     - backend platform
+  #   workflow_type: kanban
+  #   default_issue_type: Task
+
+# Optional: use this section as an intake queue when you want the agent to draft
+# several tickets from the same YAML file. The agent must still show drafts,
+# run duplicate checks, and ask for explicit approval before creating anything.
+# Use [] for "nothing to add yet". Replace [] with indented list items when you
+# have rough notes. Rough notes are fine: the agent should correct spelling and
+# grammar, clarify wording, infer useful context, and show a polished draft.
+# Dependency fields are for Jira linked work items/subtasks, not description
+# text. Leave [] when there are no linked issues; the agent should not render
+# "Dependencies: None" in Jira.
+requested_tickets:
+  # - route: stackforge
+  #   jira_key: null
+  #   jira_url: null
+  #   creation_status: draft
+  #   issue_type: Task
+  #   initial_status: Backlog
+  #   summary: Short imperative title
+  #   priority: Medium
+  #   context: Why this work matters or what problem it solves.
+  #   scope:
+  #     - In-scope work item.
+  #   acceptance_criteria:
+  #     - Given a context, when an action happens, then an expected result occurs.
+  #   technical_notes:
+  #     - Relevant system, file, API, or implementation note.
+  #   dependencies:
+  #     blocks: []
+  #     blocked_by: []
+  #     parent_of: []
+  #     child_of: []
+  #   links:
+  #     - title: Supporting design doc
+  #       url: https://example.com/design-doc

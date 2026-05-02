@@ -2,7 +2,7 @@
 
 ## Access
 
-Use whichever Jira access path is available in the runtime:
+Use the below Jira access path available in the runtime:
 
 - Existing Jira MCP/API tool, preferred when present.
 - If the Atlassian MCP server is configured but not authenticated, log in using the command for your agent runtime:
@@ -10,11 +10,6 @@ Use whichever Jira access path is available in the runtime:
   - Codex: `codex mcp login atlassian`
   - Other agents: use your agent's MCP login command.
   After logging in, complete the browser flow and restart your agent so the MCP tools are loaded.
-- OAuth 2.0 bearer token with Atlassian Cloud ID:
-  - `JIRA_CLOUD_ID`
-  - `JIRA_ACCESS_TOKEN`
-  - Base API: `https://api.atlassian.com/ex/jira/{JIRA_CLOUD_ID}`
-
 Never print tokens. Never write credentials into the skill.
 
 ## API Endpoints
@@ -26,7 +21,11 @@ Never print tokens. Never write credentials into the skill.
 - Transition issue: `POST /rest/api/3/issue/{issueIdOrKey}/transitions`
 - Add comment: `POST /rest/api/3/issue/{issueIdOrKey}/comment`
 
-Description and other multiline rich-text fields usually require Atlassian Document Format (ADF). Build the correct shape depending on content:
+Use Markdown as the source format for descriptions and comments whenever an MCP tool accepts `contentFormat: "markdown"`. Keep structured fields such as project, issue type, priority, labels, components, and parent/epic outside the Markdown body.
+
+For direct Jira REST API calls, description and other multiline rich-text fields usually require Atlassian Document Format (ADF). Convert the Markdown body to the equivalent ADF shape before sending it.
+
+Build the correct ADF shape depending on content:
 
 Plain paragraph:
 ```json
@@ -154,53 +153,120 @@ reporter = currentUser() AND statusCategory != Done ORDER BY updated DESC
 Bug:
 
 ```markdown
-Summary:
-Environment:
-Steps to reproduce:
-Expected result:
-Actual result:
-Impact:
-Priority:
-Acceptance criteria:
+## Context
+
+Describe the bug, affected user or workflow, and observed impact.
+
+## Environment
+
+- Environment:
+- Browser / client:
+- Version / commit:
+
+## Steps To Reproduce
+
+1. First step.
+2. Second step.
+3. Third step.
+
+## Expected Result
+
+Describe what should happen.
+
+## Actual Result
+
+Describe what happens instead.
+
+## Impact
+
+- User or system impact.
+- Frequency or severity, if known.
+
+## Acceptance Criteria
+
 - Reproduction steps are documented.
 - Fix is verified in the affected environment.
+- Regression coverage is added or existing coverage is updated.
 ```
 
 Story:
 
 ```markdown
-Summary:
-User / role:
-Goal:
-Reason:
-Scope:
-Acceptance criteria:
-- Given ...
-- When ...
-- Then ...
+## User Story
+
+As a user type, I want an action, so that a benefit is achieved.
+
+## Context
+
+Explain the requirement, customer problem, or business reason.
+
+## Scope
+
+- In scope item.
+- Out of scope item, if useful.
+
+## Acceptance Criteria
+
+- Given a context, when an action happens, then an expected result occurs.
+- Given another context, when another action happens, then another expected result occurs.
+
+## Technical Notes
+
+- Implementation detail, constraint, or affected system.
+
+## Dependencies
+
+- Blocks: None
+- Blocked by: None
 ```
 
 Task:
 
 ```markdown
-Summary:
-Context:
-Work required:
-Definition of done:
-Dependencies:
+## Context
+
+Explain why this task is needed.
+
+## Work Required
+
+- Work item.
+- Work item.
+
+## Definition Of Done
+
+- Required outcome.
+- Validation or test result.
+
+## Dependencies
+
+- Blocks: None
+- Blocked by: None
 ```
 
 Spike:
 
 ```markdown
-Summary:
-Goal / question to answer:
-Context:
-Time box:
-Output / deliverable:
-Definition of done:
+## Goal
+
+Question or decision this spike must answer.
+
+## Context
+
+Relevant background and constraints.
+
+## Time Box
+
+- Target time box:
+
+## Output
+
+- Expected deliverable, doc, decision, or follow-up ticket.
+
+## Definition Of Done
+
 - Question is answered with evidence.
-- Findings are documented (doc link, comment, or follow-up ticket).
+- Findings are documented with a link, comment, or follow-up ticket.
+- Recommended next step is clear.
 ```
 
 Manager summary format:
