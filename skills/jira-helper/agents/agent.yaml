@@ -1,0 +1,7 @@
+interface:
+  display_name: "Jira Helper"
+  short_description: "Create, draft, query, and update Jira Cloud tickets."
+  default_prompt: "Help me manage Jira tickets: create, update, or query issues."
+
+# Agent-agnostic manifest. Works with Claude Code, Codex, Gemini, or any agent
+# runtime that supports skill/plugin YAML manifests.

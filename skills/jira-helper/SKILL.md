@@ -1,0 +1,186 @@
+---
+name: jira-helper
+description: Create, draft, query, and summarize Jira Cloud tickets from conversations, notes, or user-provided files. Use when the user asks to create Jira issues, prepare Jira ticket drafts, parse a file into Jira tickets, route tickets to configured projects/epics, find open Jira work, query tickets by epic/project/assignee/reporter/component/label/status/priority/due date, summarize blockers or overdue tasks, or produce JQL for Jira tracking questions.
+---
+
+# Jira Helper
+
+## Overview
+
+Help users create and query Jira Cloud tickets without building a separate app. Keep workflows simple, explicit, and permission-aware.
+
+Use the Jira details and reusable JQL patterns in `references/jira.md` when handling Jira API calls, JQL construction, ticket templates, or field mapping.
+
+Use `references/project-routing.md` when the user wants configurable project, component, or epic routing, or when a team-provided config file is available.
+
+## Operating Rules
+
+- Do not create, transition, assign, comment on, or otherwise mutate Jira issues without explicit user approval.
+- For ticket creation, always prepare a human-readable draft first and ask for confirmation before making the Jira API call.
+- Before every create call, show all details that will be sent to Jira: project, issue type, summary, description, acceptance criteria, priority, assignee, component/s, labels, parent/epic, due date, links, and any custom fields.
+- Treat confirmations such as "ok", "looks good", "confirm", "approved", or "create it" as approval only after the complete draft has been shown in the current conversation.
+- Never create a ticket inside an epic/parent based only on a guess. If the epic/parent is inferred from routing config, show the matched rule and require explicit confirmation. If confidence is not high, ask the user to choose or provide the epic/parent before creating.
+- For broad tracking queries that may scan team/project work, show the JQL before executing it.
+- Prefer bounded JQL with project, assignee, reporter, epic, component, label, due date, or status constraints.
+- For ticket creation, prefer Component/s over labels unless the user explicitly asks for labels or the Jira project requires labels.
+- Do not invent required Jira fields. Ask for missing project, issue type, summary, description, priority, assignee, component/s, epic/parent, due date, acceptance criteria, or any Jira-required custom fields.
+- Before creating a ticket, run a quick duplicate check: search for open tickets with similar keywords in the same project and show any close matches to the user. Skip this step only if the user explicitly says to proceed without checking.
+- If the user gives rough notes, infer a reasonable draft from the notes and ask only the smallest set of missing questions needed to create the ticket safely.
+- Do not store credentials in the skill. Use environment variables, an existing Jira MCP/API tool, or credentials already configured in the runtime.
+- Respect Jira permissions. If Jira returns missing/forbidden results, explain that access is controlled by the authenticated user's Jira permissions.
+- Return concise results: Jira key, link, status, assignee, priority, due date, and a short summary unless the user asks for more detail.
+
+## Ticket Creation
+
+When the user asks to create a ticket:
+
+1. Extract known fields from the request.
+2. Ask only for missing required or risky fields.
+3. Draft the ticket with summary, issue type, description, acceptance criteria, priority, component/s, assignee, epic/parent, and project.
+4. If the project, component, or epic/parent came from routing config, include the matched config rule in the draft.
+5. Run a duplicate check, show any matches, then ask for explicit approval to create the issue (skip only if the user explicitly says so).
+6. Create the issue through Jira only after approval.
+7. Return the created issue key and link.
+
+Use this default draft shape:
+
+```markdown
+Project:
+Issue type:
+Summary:
+Priority:
+Assignee:
+Component/s:
+Epic/Parent:
+Sprint:          # include only for scrum projects; omit for kanban
+Story points:    # include only for scrum projects; omit for kanban
+
+Description:
+
+Acceptance criteria:
+- 
+
+Notes / links:
+
+Routing rule used:
+
+Duplicate check:
+```
+
+Sprint and Story Points are optional. Include them when the project's `workflow_type` is `scrum`. Omit them when `workflow_type` is `kanban`. If the workflow type is unknown, ask the user once before drafting.
+
+For "draft only" requests, stop after the draft and do not ask to create unless the user asks.
+
+## File-Based Ticket Intake
+
+When the user provides a file with one or more requested tickets:
+
+1. Read the file and identify candidate tickets by headings, bullets, tables, YAML/JSON objects, or repeated sections.
+2. Produce a numbered draft for each candidate ticket. Do not create tickets during the first parsing pass.
+3. Map fields only when the file or routing config supports them. Leave uncertain fields as `Needs user input`.
+4. If many tickets are found, ask the user whether to create all, selected numbers, or revise the drafts.
+5. Create only the explicitly approved tickets, and preserve the approved mapping between draft number and resulting Jira key.
+
+For ambiguous files, summarize what was detected and ask for clarification instead of silently choosing issue boundaries or epics.
+
+## Project And Epic Routing
+
+Teams may maintain a config file that maps product/project names, components, labels, keywords, or request types to Jira projects and epics. Prefer a user-specified config path when provided; otherwise look for:
+
+- `jira-routing.yml`
+- `jira-routing.yaml`
+- `.jira-routing.yml`
+- `.jira-routing.yaml`
+
+Do not treat `references/project-routing.md` as live routing config. It is a template and guidance file only.
+
+For matching rules, workflow type handling (scrum vs kanban), and file intake shape, see `references/project-routing.md`.
+
+## Ticket Queries
+
+When the user asks for open tickets, tickets in an epic, blockers, overdue work, or manager summaries:
+
+1. Convert the request into bounded JQL.
+2. Show the JQL first for broad team/project queries.
+3. Execute the search if a Jira tool/API is available and the user has approved broad queries when needed.
+4. Summarize results by the dimension the user asked for: assignee, epic, project, status, priority, due date, component, or blocker label.
+5. Highlight missing owners, overdue work, blocked items, and stale tickets when relevant.
+
+For individual queries such as "show my open tickets", execute directly if credentials/tools are available:
+
+```jql
+assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC
+```
+
+## Common Workflows
+
+### Create Ticket
+
+- Trigger examples: "create a Jira bug", "make a story for this", "file a ticket from these notes".
+- Use Jira create metadata when available to validate required fields before creation.
+
+### Prepare Draft
+
+- Trigger examples: "draft a Jira ticket", "prepare but don't create", "turn this into a story".
+- Produce a polished draft and stop.
+
+### Find My Open Tickets
+
+- Trigger examples: "show my open tickets", "what Jira tasks are assigned to me?"
+- Use `assignee = currentUser()` unless the user names someone else.
+
+### Show Tickets In Epic
+
+- Trigger examples: "show open tickets under epic ABC-123", "summarize epic ABC-123".
+- Query by parent/epic fields as appropriate for the Jira site. See `references/jira.md`.
+
+### Summarize Stalled / On Hold Work
+
+- Trigger examples: "what is on hold for the team?", "what tickets are stalled?", "why is ABC-123 blocked?"
+- Query for status = "On Hold" within the project.
+- For each result, fetch the most recent 2-3 comments and surface the reason if present.
+- Show JQL before execution for broad team/project queries.
+
+### List Overdue Tickets
+
+- Trigger examples: "list overdue tickets", "what is past due in ABC?"
+- Prefer project-bounded queries for team/project work.
+
+## Update and Edit Tickets
+
+When the user asks to update an existing ticket (change status, reassign, change priority, add a comment, update due date, or edit any field):
+
+1. Identify the ticket key. If not provided, ask for it or search by summary.
+2. Fetch the current ticket state and show relevant fields: key, status, assignee, priority, due date, last comment.
+3. Show a clear summary of what will change:
+   - Field updates: show `field: old value -> new value` for each change.
+   - Status transition: show `status: Current Status -> Target Status` and confirm the transition is available.
+   - Comment: show the full comment text before posting.
+4. Require explicit approval before applying any mutation.
+5. Apply the approved change and return the updated ticket key and a confirmation.
+
+### Update Status
+
+- Trigger examples: "mark ABC-123 as done", "move ABC-123 to In Progress", "transition ABC-123 to On Hold".
+- Fetch available transitions first: `GET /rest/api/3/issue/{key}/transitions`.
+- Show available statuses if the target is ambiguous.
+- Use `POST /rest/api/3/issue/{key}/transitions` with the matched transition ID.
+
+### Add Comment
+
+- Trigger examples: "add a comment to ABC-123", "comment on ABC-123 saying ...", "update ABC-123 with this note".
+- Show the comment text for approval before posting.
+- Use ADF format for the comment body. See `references/jira.md`.
+
+### Update Fields
+
+- Trigger examples: "reassign ABC-123 to Jane", "change priority of ABC-123 to High", "set due date on ABC-123 to Friday".
+- Show each change as `field: old -> new` and confirm before applying.
+- Use `PUT /rest/api/3/issue/{key}` with only the fields being changed.
+
+## Failure Handling
+
+- If credentials are unavailable, provide the exact JQL or ticket payload and explain what environment/tooling is needed.
+- If Jira rejects a create request, summarize field-level errors and ask for corrected values.
+- If a query returns many results, summarize the first page and offer narrower filters.
+- If epic fields differ by Jira configuration, try the site's supported parent/epic field and fall back to asking for the correct field name.
