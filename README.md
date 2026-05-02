@@ -44,3 +44,4 @@ Install into the current directory:
 4. Put large or conditional detail in `references/`.
 5. Add or update `agents/agent.yaml` when the skill needs UI metadata.
 6. Add the skill to the table in this README.
+# agents-skills
