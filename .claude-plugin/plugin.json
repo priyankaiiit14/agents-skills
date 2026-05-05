@@ -1,0 +1,27 @@
+{
+  "name": "priyankaiiit14-skills",
+  "skills": [
+    "./skills/caveman",
+    "./skills/context-audit",
+    "./skills/diagnose",
+    "./skills/fewer-permission-prompts",
+    "./skills/find-skills",
+    "./skills/grill-me",
+    "./skills/grill-with-docs",
+    "./skills/improve-codebase-architecture",
+    "./skills/init",
+    "./skills/jira-helper",
+    "./skills/pm",
+    "./skills/prompt-prep",
+    "./skills/review",
+    "./skills/security-review",
+    "./skills/setup-skills",
+    "./skills/simplify",
+    "./skills/tdd",
+    "./skills/to-issues",
+    "./skills/to-prd",
+    "./skills/triage",
+    "./skills/write-a-skill",
+    "./skills/zoom-out"
+  ]
+}
