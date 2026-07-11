@@ -1,0 +1,20 @@
+Project,Task,Description,Owner,ETA,Complexity,Dependency,Scope,Notes
+DDA,Model logging to Unity Catalog + standardize pipeline,Log all DDA models to UC; align training/scoring to team standards,Satyam,May 12,Medium,None,v1,
+DDA,IDR upstream dependency setup,Wire in IDR team's data to prevent users being missed in scoring,Satyam,May 15,Medium,IDR team — needs data handoff agreement,v1,Reach out to IDR this week or May 15 is at risk
+Personalized Pricing,Documentation,End-to-end docs for pricing system — models pipeline martech,Mehul,May 16,Low,None,v1,
+Personalized Pricing,Martech dashboard,Build/finalize dashboard for pricing signals via Martech,Mehul,May 20,Medium,None,v1,
+Personalized Pricing,Martech DynamoDB issues,Triage and fix known data issues between Martech and DynamoDB,Mehul,May 23,High,DS team — Airflow + DynamoDB e2e test must run first,v1 triage; deep fixes → v2,Get DS test date confirmed ASAP
+Personalized Pricing,Model logging to UC (pricing),Log new pricing models to UC consistent with DDA standards,Satyam,May 28,Low,Starts post DDA (May 15+),v1,
+Personalized Pricing,Shadow Mehul / codebase ramp,Satyam gets hands-on with pricing code — knowledge transfer not ownership yet,Satyam,May 15–31,Low,Satyam available post May 15,v1 foundation → v2 ownership,
+Image Tagging,Share API contract with downstream team,Define and share API contract while pipeline work is in progress — unblocks downstream early,Priyanka,May 9,Low,None,v1,Do this first — no blocker
+Image Tagging,Scheduled pipeline (6hr tag generation),Build scheduled pipeline to generate tags at 6hr frequency and ingest into feature serving endpoint,Priyanka,May 23,High,DS team — v1 repo must be delivered first,v1,Get DS delivery date this week
+Image Tagging,Feature serving endpoint exposure,Expose the feature serving endpoint for downstream consumption,Priyanka,May 23,Medium,DS team v1 repo + pipeline done,v1,
+Image Tagging,Backfill — Vogue Runway + Streetstyle,Backfill historical tags for Vogue Runway and Streetstyle galleries,Priyanka,May 30,High,Pipeline done first,v1,
+Image Tagging,CI gallery/photo logic,Check with CI team if they can add logic to pull different galleries and photos,Anuj,May 15,Low,CI team availability,v1 investigation; implementation → v2,
+Wired Search,API contract using Stackforge vector index,Define API contract backed by Stackforge vector index; share with app and content service teams,TBD ⚠️ — NO OWNER ASSIGNED,May 16,Medium,Stackforge index available,v1,Assign owner ASAP
+Content Intelligence (CIQ),Ingest new content types,Work with DS team to define and ingest new content types into the platform,DS team + Kishor,May 20,Medium,DS team — content type definition,v1,Kick off DS alignment now
+Content Intelligence (CIQ),Backfill new content type,Run backfill for newly ingested content types,Kishor,May 28,High,DS team ingestion done,v1,
+Content Intelligence (CIQ),Integrate with CIQ,Wire new content types into CIQ pipeline,Kishor,May 31,Medium,Backfill complete,v1,
+Stackforge,DS model selection,Align with DS team on which model to use for search before building,Priyanka,May 9,Low,DS team decision,v1 prerequisite,Do this early — gates everything else
+Stackforge,CI pipeline — incremental ingestion,Integrate Stackforge with CI pipeline to ingest incremental data from source,Priyanka,May 23,High,DS model decision,v1,
+Stackforge,Historical data backfill,Backfill historical data into Stackforge index,Priyanka,May 30,High,Incremental pipeline done,v1,Priyanka load is heavy here — overlaps with Image Tagging backfill
