@@ -7,7 +7,7 @@ target_dir="$target_root/.claude/skills"
 
 mkdir -p "$target_dir"
 
-for skill_dir in "$repo_root"/skills/*; do
+for skill_dir in "$repo_root"/src/skills_hub/skills/*; do
   [ -d "$skill_dir" ] || continue
   skill_name="$(basename "$skill_dir")"
   rm -rf "$target_dir/$skill_name"

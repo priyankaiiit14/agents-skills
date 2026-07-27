@@ -1,8 +1,8 @@
-# Personal Skills
+# skills-hub
 
-Reusable agent skills for Codex, Claude Code, and other local coding agents.
+Packaged agent skills for Claude Code, Codex, and VS Code. Skills are markdown files — install them into your project's `.claude/skills/` directory and every tool picks them up automatically.
 
-## Skills
+## Available Skills
 
 | Skill | Purpose |
 | --- | --- |
@@ -31,81 +31,113 @@ Reusable agent skills for Codex, Claude Code, and other local coding agents.
 
 ## Install
 
-### Option 1 — npx (recommended)
+Skills land in `.claude/skills/` in the current directory. Commit them — teammates who clone the project get the skills without needing any tooling installed.
 
-Requires [Node.js](https://nodejs.org) 18+. Installs skills via the `skills` CLI into your project's `.claude/skills/` directory.
+### Option 1 — uv (recommended, no Python required)
 
-**Install all skills:**
-
-```bash
-npx skills@latest add priyankaiiit14/agents-skills
-```
-
-**Install specific skills only:**
+Install `uv` once if you don't have it:
 
 ```bash
-npx skills@latest add priyankaiiit14/agents-skills --skills jira-helper,triage,tdd
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Option 2 — Python script
-
-No dependencies beyond Python 3.8+. Pulls the skills directly from GitHub.
-
-**Install all skills:**
+Then install skills:
 
 ```bash
-python3 scripts/skills.py add
+uvx skills-hub install review tdd       # specific skills
+uvx skills-hub install --all            # everything
+uvx skills-hub==0.2.0 install review   # pin to a version
 ```
 
-**Install specific skills:**
+### Option 2 — bash (no tooling required, local clone only)
+
+Clone the repo once, then copy skills into any project:
 
 ```bash
-python3 scripts/skills.py add --skills jira-helper,triage,tdd
+git clone https://github.com/priyankaiiit14/agents-skills.git
+cd agents-skills
+
+./scripts/install-local.sh /path/to/my-project   # into a specific project
+./scripts/install-local.sh                        # into the current directory
 ```
 
-**Install into a specific project directory:**
+### See what's available
 
 ```bash
-python3 scripts/skills.py add --target /path/to/my-project
+uvx skills-hub list
 ```
 
-**Pull from a specific branch:**
+### Update installed skills
+
+After a new release, re-run with the new version to update:
 
 ```bash
-python3 scripts/skills.py add --branch main
+uvx skills-hub update
 ```
 
-### Option 3 — Shell script (local only)
-
-If you have cloned this repo, copy all skills into a project's `.claude/skills/`:
+### Check installed vs available
 
 ```bash
-# into a specific project
-./scripts/install-local.sh /path/to/project
-
-# into the current directory
-./scripts/install-local.sh
+uvx skills-hub status
 ```
 
-## Layout
+## How releases work
+
+Merges to `main` do not auto-publish. A maintainer cuts a release by bumping the version and pushing a tag:
+
+1. Bump `version` in `pyproject.toml` and `src/skills_hub/__init__.py`
+2. Commit and push to `main`
+3. Push a tag:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The GitHub Action builds the package and publishes it to PyPI automatically. Teams can then `uvx skills-hub==0.2.0 install` or use `uvx skills-hub update` to pick up the new version.
+
+## Contributing a skill
+
+You do not need to clone the repo to use skills. Clone only if you are adding or editing one.
+
+```bash
+git clone git@github.com:priyankaiiit14/agents-skills.git
+cd agents-skills
+git checkout -b skills/my-skill-name
+uvx skills-hub create my-skill-name   # scaffolds src/skills_hub/skills/my-skill-name/SKILL.md
+# edit the file, then:
+git add src/skills_hub/skills/my-skill-name
+git commit -m "add my-skill-name skill"
+# open a PR to main
+```
+
+### Branch naming
+
+| Branch | Purpose |
+| --- | --- |
+| `main` | Always stable. Protected — PRs required. |
+| `skills/<name>` | New or updated skill |
+| `fix/<name>` | Bug fix to an existing skill |
+| `release/v<x.y.z>` | Version bump PR before tagging |
+
+### Skill layout
 
 ```text
-skills/
+src/skills_hub/skills/
   <skill-name>/
-    SKILL.md
-    agents/
-    references/
-    scripts/
-    assets/
+    SKILL.md          ← required; keep concise
+    references/       ← large or conditional reference material
+    scripts/          ← executable helpers
+    assets/           ← templates, binaries, examples
 ```
 
-Each skill keeps `SKILL.md` concise. Large or conditional detail goes in `references/`, executable helpers in `scripts/`, and reusable templates or binaries in `assets/`.
+Add YAML frontmatter to `SKILL.md`:
 
-## Adding A Skill
+```yaml
+---
+name: my-skill-name
+description: One-line description shown in `skills-hub list`.
+---
+```
 
-1. Create `skills/<skill-name>/SKILL.md`.
-2. Add YAML frontmatter with `name` and `description`.
-3. Keep operational instructions in `SKILL.md`.
-4. Put large or conditional detail in `references/`.
-5. Add the skill path to `.claude-plugin/plugin.json`.
-6. Add the skill to the table in this README.
+Add the skill to the table in this README and open a PR. A reviewer approves; the next release picks it up.

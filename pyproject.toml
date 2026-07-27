@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "skills-hub"
+version = "0.1.0"
+description = "Packaged Claude Code / Codex skills for teams"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["claude", "codex", "skills", "agents", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.scripts]
+skills-hub = "skills_hub.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/skills_hub"]
+

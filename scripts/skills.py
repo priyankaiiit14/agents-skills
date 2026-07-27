@@ -30,7 +30,7 @@ from pathlib import Path
 
 DEFAULT_REPO = "priyankaiiit14/agents-skills"
 DEFAULT_BRANCH = "main"
-SKILLS_SUBDIR = "skills"
+SKILLS_SUBDIR = "src/skills_hub/skills"
 LOCK_FILE = "skills-lock.json"
 
 
