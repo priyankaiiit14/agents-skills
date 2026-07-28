@@ -1,8 +1,10 @@
 """Shared helpers for the skill test suite.
 
-A "skill" is a `SKILL.md` folder under `src/agent_skills_bundle/skills/`. These
-helpers load and parse those folders so both the static gate (Layer A) and the
-behavioral evals (Layer B) work from the same view of the bundle.
+A "skill" is a `SKILL.md` folder under `src/agent_skills_bundle/skills/`.
+Shared skills live under `shared_skills/`; project skills live under
+`project_skills/<project>/<skill>/`. These helpers load and parse those folders
+so both the static gate (Layer A) and the behavioral evals (Layer B) work from
+the same view of the bundle.
 """
 
 from __future__ import annotations
@@ -13,6 +15,8 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "src" / "agent_skills_bundle" / "skills"
+SHARED_DIR = SKILLS_DIR / "shared_skills"
+PROJECTS_DIR = SKILLS_DIR / "project_skills"
 
 # The only frontmatter keys any bundled skill uses today. New keys must be added
 # here deliberately so a typo (e.g. `user-invocabl`) fails the gate instead of
@@ -30,10 +34,34 @@ RESOURCE_EXTS = (".md", ".sh", ".yml", ".yaml", ".py", ".txt", ".json")
 
 
 def skill_names() -> list[str]:
-    """Every skill folder name, sorted. Mirrors cli.available_skills()."""
-    return sorted(
-        d.name for d in SKILLS_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")
-    )
+    """All installable skill identifiers, sorted.
+
+    Shared skills return their leaf name (e.g. "review").
+    Project skills return their full key (e.g. "project_skills/search/query-review").
+    Mirrors cli.available_skills().
+    """
+    shared = sorted(
+        d.name for d in SHARED_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")
+    ) if SHARED_DIR.exists() else []
+
+    project = []
+    if PROJECTS_DIR.exists():
+        for proj in sorted(PROJECTS_DIR.iterdir()):
+            if not proj.is_dir() or proj.name.startswith("."):
+                continue
+            for skill in sorted(proj.iterdir()):
+                if skill.is_dir() and not skill.name.startswith("."):
+                    project.append(f"project_skills/{proj.name}/{skill.name}")
+
+    return shared + project
+
+
+def skill_dir(name: str) -> Path:
+    """Return the directory for a skill given its identifier."""
+    if "/" in name:
+        _, proj, skill = name.split("/")
+        return PROJECTS_DIR / proj / skill
+    return SHARED_DIR / name
 
 
 def split_frontmatter(text: str) -> tuple[str, str]:
@@ -48,7 +76,7 @@ def split_frontmatter(text: str) -> tuple[str, str]:
 
 def load_skill(name: str) -> tuple[dict, str, Path]:
     """Return (frontmatter_dict, body, skill_dir) for one skill."""
-    skill_dir = SKILLS_DIR / name
-    fm_text, body = split_frontmatter((skill_dir / "SKILL.md").read_text())
+    d = skill_dir(name)
+    fm_text, body = split_frontmatter((d / "SKILL.md").read_text())
     frontmatter = yaml.safe_load(fm_text)
-    return frontmatter, body, skill_dir
+    return frontmatter, body, d
