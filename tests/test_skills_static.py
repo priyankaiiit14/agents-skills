@@ -89,3 +89,13 @@ def test_lockfile_has_no_dangling_entries():
     lock = json.loads((REPO_ROOT / "skills-lock.json").read_text())
     dangling = [n for n in lock.get("skills", {}) if n not in SKILLS]
     assert not dangling, f"skills-lock.json references removed skills: {dangling}"
+
+
+def test_every_skill_has_an_eval_spec():
+    """Every bundled skill must have a behavioral eval spec in tests/evals/specs/."""
+    specs_dir = REPO_ROOT / "tests" / "evals" / "specs"
+    missing = [n for n in SKILLS if not (specs_dir / f"{n}.yaml").is_file()]
+    assert not missing, (
+        f"skills missing a behavioral eval spec in tests/evals/specs/: {missing}\n"
+        "Add a <skill>.yaml there — see tests/evals/README.md."
+    )
