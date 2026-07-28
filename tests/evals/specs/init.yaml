@@ -1,0 +1,25 @@
+skill: init
+input: |
+  Project structure:
+
+  pyproject.toml (FastAPI, sqlalchemy, alembic, pytest, uvicorn)
+  src/
+    main.py
+    api/   (routers, dependencies)
+    models/ (SQLAlchemy models)
+    services/
+  tests/
+  alembic/
+
+  From the README:
+  - Run dev server: uvicorn src.main:app --reload
+  - Run tests: pytest
+  - Apply migrations: alembic upgrade head
+
+  No CLAUDE.md exists yet. Please create one.
+rubric: |
+  - The response produces a CLAUDE.md that is 60 lines or fewer.
+  - The CLAUDE.md contains the exact run command: uvicorn src.main:app --reload
+  - The CLAUDE.md contains the exact test command: pytest
+  - The CLAUDE.md contains the migration command: alembic upgrade head
+  - The CLAUDE.md does not contain generic advice ("write clean code", "follow best practices", etc.).

@@ -1,0 +1,9 @@
+skill: setup-skills
+input: |
+  Please set up the agent skills configuration for this repository. It is a GitHub-hosted
+  Node.js project. There is no existing AGENTS.md, CLAUDE.md, or docs/agents/ directory.
+rubric: |
+  - The response explores or asks about the repository's current state before writing any files.
+  - The response explains what the issue tracker configuration is and why it is needed.
+  - The response presents the issue tracker choice to the user and asks for confirmation before writing anything.
+  - The response does not write files without first confirming decisions with the user.

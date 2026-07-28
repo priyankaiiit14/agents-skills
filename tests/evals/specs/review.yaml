@@ -1,0 +1,21 @@
+skill: review
+# A diff with a seeded off-by-one bug: the loop runs to `<= len(items)`, which
+# indexes one past the end. A working `review` skill must surface it.
+input: |
+  Review this diff:
+
+  ```diff
+  --- a/cart.py
+  +++ b/cart.py
+  @@ -1,4 +1,6 @@
+   def total(items):
+  -    return sum(i.price for i in items)
+  +    result = 0
+  +    for n in range(len(items) + 1):
+  +        result += items[n].price
+  +    return result
+  ```
+rubric: |
+  - The review identifies the off-by-one / out-of-bounds index (range(len(items) + 1)
+    accesses items[len(items)], which raises IndexError).
+  - It is flagged as a bug (not merely a style note).

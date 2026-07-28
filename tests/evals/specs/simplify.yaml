@@ -1,0 +1,25 @@
+skill: simplify
+input: |
+  Recently changed code — please simplify it:
+
+  ```python
+  def get_active_users(users):
+      active = []
+      for user in users:
+          if user.is_active == True:
+              active.append(user)
+      return active
+
+  def get_admin_users(users):
+      admins = []
+      for user in users:
+          if user.is_admin == True:
+              admins.append(user)
+      return admins
+  ```
+rubric: |
+  - The response identifies the duplication between the two functions.
+  - The response provides a simplified version that merges the duplicated logic.
+  - The simplified code removes the explicit `== True` comparisons.
+  - The response does not add comments explaining the simplification.
+  - The simplified code is functionally equivalent to the original.

@@ -1,0 +1,21 @@
+skill: security-review
+# Diff contains two seeded vulnerabilities: SQL injection via f-string and a hardcoded credential.
+input: |
+  Review this diff for security issues:
+
+  ```diff
+  --- a/db.py
+  +++ b/db.py
+  @@ -1,6 +1,8 @@
+  +DB_PASSWORD = "prod_s3cr3t_123"
+  +
+   def get_user(username):
+  -    return db.query("SELECT * FROM users WHERE username = ?", username)
+  +    return db.query(f"SELECT * FROM users WHERE username = '{username}'")
+  ```
+rubric: |
+  - The response identifies the SQL injection vulnerability (f-string interpolation replacing parameterised query).
+  - The response identifies the hardcoded credential (DB_PASSWORD).
+  - Each finding references db.py and an approximate line number.
+  - Each finding includes a severity (critical or high for these two issues).
+  - The response does not flag clean areas that have no issues.

@@ -1,0 +1,8 @@
+skill: find-skills
+input: |
+  I keep writing changelogs by hand from git commits. Is there a skill that can
+  automate this for me?
+rubric: |
+  - The response mentions the skills CLI (npx skills) or skills.sh as the discovery mechanism.
+  - The response suggests a concrete search command such as `npx skills find changelog` or similar.
+  - The response does not fabricate a specific skill name without qualifying that it needs to be verified.

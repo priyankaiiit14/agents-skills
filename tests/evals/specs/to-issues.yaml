@@ -1,0 +1,9 @@
+skill: to-issues
+input: |
+  Plan: Add two-factor authentication (2FA) to the login flow. Users can enrol a TOTP
+  authenticator app and must enter a 6-digit code after their password on every login.
+rubric: |
+  - The response produces a numbered list of vertical slices, not horizontal layers (e.g. not "write all tests" as one issue).
+  - Each slice has a title, a type (HITL or AFK), and a blocked-by field.
+  - Each slice is independently demoable or verifiable on its own.
+  - There is more than one issue — the plan is not collapsed into a single monolithic ticket.

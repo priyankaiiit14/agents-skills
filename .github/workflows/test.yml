@@ -1,0 +1,54 @@
+name: test
+
+# Layer A (static + CLI gate) runs on every PR and push to main — fast, free, no API key.
+# Layer B (behavioral evals) runs only on workflow_dispatch — needs OPENAI_API_KEY secret.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: 'Which jobs to run'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - static-only
+          - evals-only
+      openai_api_key:
+        description: 'OpenAI API key (leave blank to use the OPENAI_API_KEY repo secret)'
+        required: false
+      executor_model:
+        description: 'Model to run skills under test'
+        default: 'gpt-4o'
+        required: false
+      judge_model:
+        description: 'Model to judge outputs'
+        default: 'gpt-4o-mini'
+        required: false
+
+jobs:
+  static-gate:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.jobs != 'evals-only'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Layer A — static + CLI gate
+        run: uv run --extra dev pytest tests/test_skills_static.py tests/test_cli.py
+
+  behavioral-evals:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.jobs != 'static-only'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Layer B — behavioral evals
+        env:
+          OPENAI_API_KEY: ${{ github.event.inputs.openai_api_key || secrets.OPENAI_API_KEY }}
+          EVAL_EXECUTOR_MODEL: ${{ github.event.inputs.executor_model }}
+          EVAL_JUDGE_MODEL: ${{ github.event.inputs.judge_model }}
+        run: RUN_EVALS=1 uv run --extra evals pytest tests/test_evals.py -v

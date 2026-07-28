@@ -1,0 +1,9 @@
+skill: zoom-out
+input: |
+  I'm looking at the OrderProcessor class but I don't understand how it fits into the
+  rest of the system. I need broader context.
+rubric: |
+  - The response provides a map of relevant modules and their relationships to OrderProcessor.
+  - The response identifies callers or upstream entry points (what invokes OrderProcessor).
+  - The response goes up a layer of abstraction rather than diving deeper into OrderProcessor's internals.
+  - The response uses domain-level framing (not just a raw list of filenames).

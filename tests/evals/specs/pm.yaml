@@ -1,0 +1,13 @@
+skill: pm
+input: |
+  Goal: Add email verification to user registration. Currently users register with any
+  email and get immediate access. We need to send a verification email and block access
+  until confirmed.
+
+  Stack: Node.js, Express, PostgreSQL, SendGrid.
+rubric: |
+  - The response includes a Goal section (one sentence stating what success looks like).
+  - The response includes a Work Breakdown with tasks presented in a table or structured list.
+  - Each task includes an effort estimate.
+  - The response identifies a critical path or notes which tasks block others.
+  - The response lists at least one assumption the team should verify.

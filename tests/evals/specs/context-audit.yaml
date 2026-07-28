@@ -1,0 +1,16 @@
+skill: context-audit
+input: |
+  Here is my /context output:
+
+  systemPrompt: 8,200 tokens
+  mcpTools: 42,000 tokens (3 servers: filesystem 14k, postgres 15k, slack 13k)
+  claudeMd: 3,100 tokens
+  conversationHistory: 1,200 tokens
+  total: 54,500 tokens
+
+  Please audit this.
+rubric: |
+  - The response identifies MCP servers as the largest token category (42,000 tokens).
+  - The response recommends removing or disabling at least one underused MCP server.
+  - The response flags the CLAUDE.md size (3,100 tokens) as worth auditing or trimming.
+  - The response provides at least one specific, actionable fix (not just general advice).

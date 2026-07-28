@@ -1,0 +1,12 @@
+skill: write-a-skill
+input: |
+  Create a skill called "changelog" that generates a changelog entry from recent git
+  commits. It should group commits by type (feat, fix, chore) and format them as a
+  markdown section.
+rubric: |
+  - The response produces a SKILL.md with valid frontmatter opened and closed with ---.
+  - The frontmatter includes a name field set to "changelog".
+  - The frontmatter includes a non-empty description field.
+  - The skill body contains concrete instructions for generating a changelog from git commits.
+  - The skill body mentions grouping commits by type (feat, fix, chore or similar).
+  - The SKILL.md is under 500 lines.

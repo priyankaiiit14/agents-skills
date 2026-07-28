@@ -1,0 +1,11 @@
+skill: tdd
+input: |
+  Build a function apply_discount(price, discount_pct) that applies a percentage
+  discount to a price and raises a ValueError if discount_pct is not between 0 and 100.
+  Use TDD.
+rubric: |
+  - The response writes a failing test (RED phase) before any implementation.
+  - The test covers at least the happy path and the ValueError case.
+  - The response then provides the implementation (GREEN phase) to make the test pass.
+  - The response does NOT write all tests first and all implementation second (no horizontal slicing — each test-then-impl cycle is vertical).
+  - The test exercises the public interface (apply_discount), not internal details.

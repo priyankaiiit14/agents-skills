@@ -1,0 +1,11 @@
+skill: jira-helper
+input: |
+  Give me the JQL to find all open bugs assigned to me in the PLATFORM project,
+  ordered by priority.
+rubric: |
+  - The response contains a JQL query.
+  - The query filters project = PLATFORM (or equivalent).
+  - It restricts to bug issue type (issuetype = Bug).
+  - It restricts to the current user (assignee = currentUser()).
+  - It restricts to open/unresolved work (e.g. statusCategory != Done, or resolution = Unresolved).
+  - It orders by priority (ORDER BY priority).

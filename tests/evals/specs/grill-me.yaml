@@ -1,0 +1,8 @@
+skill: grill-me
+input: |
+  I want to add a Redis caching layer in front of our PostgreSQL read queries to reduce
+  database load. Grill me on this plan.
+rubric: |
+  - The response asks exactly one question — not a list of multiple questions at once.
+  - The question probes a real architectural decision (e.g. cache invalidation strategy, TTL, which queries to cache, consistency model).
+  - The question includes a recommended answer or default position, not just the question alone.

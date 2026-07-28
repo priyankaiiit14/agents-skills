@@ -284,7 +284,7 @@ def main():
     p_status = sub.add_parser("status", help="Show installed vs available skills")
     add_scope(p_status)
 
-    p_create = sub.add_parser("create", help="Scaffold a new skill (run from agent-skills-bundle repols-hub repo root)")
+    p_create = sub.add_parser("create", help="Scaffold a new skill (run from agent-skills-bundle repo root)")
     p_create.add_argument("name", help="Skill name (e.g. data-pipeline-review)")
 
     args = parser.parse_args()
