@@ -19,7 +19,7 @@ classifiers = [
 # Layer A — deterministic static + CLI gate (fast, free, runs in CI).
 dev = ["pytest>=7", "pyyaml>=6"]
 # Layer B — behavioral evals: an agent run + LLM-as-judge (needs an API key, costs tokens).
-evals = ["openai>=1.0", "pyyaml>=6"]
+evals = ["pytest>=7", "openai>=1.0", "pyyaml>=6"]
 
 [project.scripts]
 agent-skills-bundle = "agent_skills_bundle.cli:main"
