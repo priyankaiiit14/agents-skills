@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-skills-hub — install and manage agent skills for Claude Code and Codex.
+agent-skills-bundle — install and manage agent skills for Claude Code and Codex.
 
 Skills are SKILL.md folders — a cross-agent standard. The same folder works in
 Claude Code (.claude/skills/) and Codex (.codex/skills/) unmodified.
 
 Usage:
-  skills-hub list                                 # list available skills
-  skills-hub install review                       # install one skill (both agents, project)
-  skills-hub install review tdd                   # install multiple
-  skills-hub install --all                        # install everything
-  skills-hub install review --target claude       # Claude only
-  skills-hub install review --scope global        # machine-wide (~/.claude, ~/.codex)
-  skills-hub update                               # re-install tracked skills (pick up new version)
-  skills-hub status                               # show installed vs available
-  skills-hub create my-skill                      # scaffold a new skill for contribution
+  agent-skills-bundle list                                 # list available skills
+  agent-skills-bundle install review                       # install one skill (both agents, project)
+  agent-skills-bundle install review tdd                   # install multiple
+  agent-skills-bundle install --all                        # install everything
+  agent-skills-bundle install review --target claude       # Claude only
+  agent-skills-bundle install review --scope global        # machine-wide (~/.claude, ~/.codex)
+  agent-skills-bundle update                               # re-install tracked skills (pick up new version)
+  agent-skills-bundle status                               # show installed vs available
+  agent-skills-bundle create my-skill                      # scaffold a new skill for contribution
 """
 
 import argparse
@@ -26,11 +26,11 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from skills_hub import __version__
+from agent_skills_bundle import __version__
 
 BUNDLED = Path(__file__).parent / "skills"
 LOCK_FILE = "skills-lock.json"
-GLOBAL_LOCK = Path.home() / ".skills-hub" / "skills-lock.json"
+GLOBAL_LOCK = Path.home() / ".agent-skills-bundle" / "skills-lock.json"
 AGENT_DIRS = {"claude": ".claude/skills", "codex": ".codex/skills"}
 SKILL_TEMPLATE = """\
 ---
@@ -100,7 +100,7 @@ def copy_skill(name: str, dest_dir: Path) -> str:
     """Copy one bundled skill folder into dest_dir/<name>; return its content hash."""
     src = BUNDLED / name
     if not src.exists():
-        sys.exit(f"Skill '{name}' not found. Run `skills-hub list` to see available skills.")
+        sys.exit(f"Skill '{name}' not found. Run `agent-skills-bundle list` to see available skills.")
     dest = dest_dir / name
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(src, dest)
@@ -114,7 +114,7 @@ def cmd_list(_args):
     if not skills:
         print("No skills bundled in this version.")
         return
-    print(f"skills-hub v{__version__} — {len(skills)} skill(s) available:\n")
+    print(f"agent-skills-bundle v{__version__} — {len(skills)} skill(s) available:\n")
     for name in skills:
         skill_md = BUNDLED / name / "SKILL.md"
         desc = ""
@@ -157,7 +157,7 @@ def cmd_install(args):
 
     save_lock(path, lock)
     print(f"\n{len(wanted)} skill(s) installed for {args.target} ({args.scope} scope, "
-          f"skills-hub v{__version__})")
+          f"agent-skills-bundle v{__version__})")
 
 
 def cmd_update(args):
@@ -167,7 +167,7 @@ def cmd_update(args):
 
     tracked = list(lock["skills"].keys())
     if not tracked:
-        print(f"No skills tracked in {path}. Run `skills-hub install` first.")
+        print(f"No skills tracked in {path}. Run `agent-skills-bundle install` first.")
         return
 
     target = lock.get("target", "both")
@@ -177,7 +177,7 @@ def cmd_update(args):
 
     for name in tracked:
         if name not in available:
-            print(f"  warning: '{name}' is no longer in skills-hub v{__version__}, skipping")
+            print(f"  warning: '{name}' is no longer in agent-skills-bundle v{__version__}, skipping")
             skipped.append(name)
             continue
         for agent, d in dests.items():
@@ -194,7 +194,7 @@ def cmd_update(args):
     lock["package_version"] = __version__
     save_lock(path, lock)
     print(f"\n{len(updated)} updated, {len(skipped)} skipped ({args.scope} scope, "
-          f"skills-hub v{__version__})")
+          f"agent-skills-bundle v{__version__})")
 
 
 def cmd_status(args):
@@ -204,7 +204,7 @@ def cmd_status(args):
     available = set(available_skills())
     installed = lock.get("skills", {})
 
-    print(f"skills-hub v{__version__}  |  scope: {args.scope}  |  "
+    print(f"agent-skills-bundle v{__version__}  |  scope: {args.scope}  |  "
           f"target: {lock.get('target', '?')}  |  lock: {path}\n")
     print(f"  {'SKILL':<30} {'INSTALLED':<10} {'PKG VERSION'}")
     print(f"  {'-'*30} {'-'*10} {'-'*11}")
@@ -223,12 +223,12 @@ def cmd_status(args):
 
 def cmd_create(args):
     name = args.name.lower().replace(" ", "-")
-    skills_src = Path(os.getcwd()) / "src" / "skills_hub" / "skills"
+    skills_src = Path(os.getcwd()) / "src" / "agent_skills_bundle" / "skills"
 
     if not skills_src.exists():
         sys.exit(
-            "No 'src/skills_hub/skills/' directory found in the current directory.\n"
-            "Run this command from the root of the skills-hub repo."
+            "No 'src/agent_skills_bundle/skills/' directory found in the current directory.\n"
+            "Run this command from the root of the agent-skills-bundle repo."
         )
 
     dest = skills_src / name
@@ -244,7 +244,7 @@ def cmd_create(args):
     print(f"\nNext steps:")
     print(f"  1. Edit {skill_file}")
     print(f"  2. git checkout -b skills/{name}")
-    print(f"  3. git add src/skills_hub/skills/{name} && git commit -m 'add {name} skill'")
+    print(f"  3. git add src/agent_skills_bundle/skills/{name} && git commit -m 'add {name} skill'")
     print(f"  4. Open a PR to main")
 
 
@@ -261,10 +261,10 @@ def add_scope(p):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="skills-hub",
+        prog="agent-skills-bundle",
         description="Install and manage agent skills for Claude Code / Codex",
     )
-    parser.add_argument("--version", action="version", version=f"skills-hub {__version__}")
+    parser.add_argument("--version", action="version", version=f"agent-skills-bundle {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("list", help="List available skills in this version")
@@ -284,7 +284,7 @@ def main():
     p_status = sub.add_parser("status", help="Show installed vs available skills")
     add_scope(p_status)
 
-    p_create = sub.add_parser("create", help="Scaffold a new skill (run from skills-hub repo root)")
+    p_create = sub.add_parser("create", help="Scaffold a new skill (run from agent-skills-bundle repols-hub repo root)")
     p_create.add_argument("name", help="Skill name (e.g. data-pipeline-review)")
 
     args = parser.parse_args()

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "skills-hub"
+name = "agent-skills-bundle"
 version = "0.1.0"
 description = "Packaged Claude Code / Codex skills for teams"
 readme = "README.md"
@@ -16,8 +16,8 @@ classifiers = [
 ]
 
 [project.scripts]
-skills-hub = "skills_hub.cli:main"
+agent-skills-bundle = "agent_skills_bundle.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/skills_hub"]
+packages = ["src/agent_skills_bundle"]
 
