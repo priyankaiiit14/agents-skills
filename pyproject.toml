@@ -19,7 +19,7 @@ classifiers = [
 # Layer A — deterministic static + CLI gate (fast, free, runs in CI).
 dev = ["pytest>=7", "pyyaml>=6"]
 # Layer B — behavioral evals: an agent run + LLM-as-judge (needs an API key, costs tokens).
-evals = ["anthropic>=0.40", "pyyaml>=6"]
+evals = ["openai>=1.0", "pyyaml>=6"]
 
 [project.scripts]
 agent-skills-bundle = "agent_skills_bundle.cli:main"
@@ -30,6 +30,6 @@ packages = ["src/agent_skills_bundle"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "eval: behavioral eval that calls the model (opt-in; needs RUN_EVALS=1 and ANTHROPIC_API_KEY)",
+    "eval: behavioral eval that calls the model (opt-in; needs RUN_EVALS=1 and OPENAI_API_KEY)",
 ]
 

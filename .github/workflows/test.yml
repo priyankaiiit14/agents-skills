@@ -1,13 +1,22 @@
 name: test
 
-# Merge gate: the deterministic static + CLI checks must pass on every PR to main.
-# Behavioral evals (Layer B) are NOT run here — they need an API key and cost
-# tokens; run them locally with `scripts/test.sh --evals`.
+# Layer A (static + CLI gate) runs on every PR and push to main — fast, free, no API key.
+# Layer B (behavioral evals) runs only on workflow_dispatch — needs OPENAI_API_KEY secret.
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      executor_model:
+        description: 'Model to run skills under test'
+        default: 'gpt-4o'
+        required: false
+      judge_model:
+        description: 'Model to judge outputs'
+        default: 'gpt-4o-mini'
+        required: false
 
 jobs:
   static-gate:
@@ -17,3 +26,16 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Layer A — static + CLI gate
         run: uv run --extra dev pytest tests/test_skills_static.py tests/test_cli.py
+
+  behavioral-evals:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Layer B — behavioral evals
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EVAL_EXECUTOR_MODEL: ${{ github.event.inputs.executor_model }}
+          EVAL_JUDGE_MODEL: ${{ github.event.inputs.judge_model }}
+        run: RUN_EVALS=1 uv run --extra evals pytest tests/test_evals.py -v

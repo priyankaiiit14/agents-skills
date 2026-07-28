@@ -1,7 +1,7 @@
 # Behavioral evals (Layer B)
 
 Proves a skill *achieves its purpose*, not just that it's well-formed. Each spec
-runs the skill against a fixture task through the Anthropic API and scores the
+runs the skill against a fixture task through the OpenAI API and scores the
 output against acceptance criteria with an LLM-as-judge.
 
 These are opt-in — they call the model, cost tokens, and are non-deterministic,
@@ -11,17 +11,19 @@ merges live one level up in `tests/test_skills_static.py` and `tests/test_cli.py
 ## Run
 
 ```bash
-export ANTHROPIC_API_KEY=...
+export OPENAI_API_KEY=...
 scripts/test.sh --evals
 # or directly:
 RUN_EVALS=1 uv run --extra evals pytest tests/test_evals.py -v
 ```
 
+`.env` file is loaded automatically by `scripts/test.sh` if present — put your
+`OPENAI_API_KEY=...` there and it won't be needed on the command line.
+
 Models (both env-overridable, see `runner.py`):
 
-- `EVAL_EXECUTOR_MODEL` — runs the skill under test. Default `claude-opus-5`.
-- `EVAL_JUDGE_MODEL` — scores the output. Default `claude-haiku-4-5` (cheapest
-  current model; raise to `claude-sonnet-5` for borderline rubrics).
+- `EVAL_EXECUTOR_MODEL` — runs the skill under test. Default `gpt-4o`.
+- `EVAL_JUDGE_MODEL` — scores the output. Default `gpt-4o-mini`.
 
 ## Add a skill to the suite
 
