@@ -1,0 +1,7 @@
+skill: grill-with-docs
+input: |
+  I want to introduce event sourcing for the order service. Grill me on this plan.
+rubric: |
+  - The response asks exactly one question and does not list multiple questions at once.
+  - The question includes a recommended answer or position.
+  - The response mentions checking CONTEXT.md, ADRs, or existing domain documentation before or during the grilling session.

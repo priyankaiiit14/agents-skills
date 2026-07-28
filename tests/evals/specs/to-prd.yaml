@@ -1,0 +1,9 @@
+skill: to-prd
+input: |
+  We need to add dark mode to our web app. Users have been requesting it. The app uses
+  React with CSS custom properties already in place.
+rubric: |
+  - The response produces a PRD that includes a Problem Statement section.
+  - The response includes a Solution section.
+  - The response includes a numbered list of User Stories in "As a <actor>, I want <feature>, so that <benefit>" format.
+  - The response synthesises directly from the provided context and does NOT interview the user first.

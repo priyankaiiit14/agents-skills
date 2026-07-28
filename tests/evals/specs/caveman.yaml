@@ -1,0 +1,8 @@
+skill: caveman
+input: |
+  Explain what a database index is and when to use one.
+rubric: |
+  - The response omits filler words and pleasantries (no "sure", "happy to", "basically", "just", "of course").
+  - The response omits or minimises articles (a/an/the) and conjunctions.
+  - The technical content is accurate: indexes speed reads, cost writes and storage.
+  - The response uses compressed syntax — short phrases, fragments, or arrow notation (->).

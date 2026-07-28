@@ -1,0 +1,8 @@
+skill: prompt-prep
+input: |
+  I want to investigate why our API response times spiked after last Tuesday's deploy.
+rubric: |
+  - The response asks for missing fields rather than attempting to solve the investigation.
+  - The response asks about scope (which service, endpoint, or files to focus on).
+  - The response asks about the expected output or concrete goal of the investigation.
+  - The final output is a structured prompt template ready to hand to an agent, not a solution.

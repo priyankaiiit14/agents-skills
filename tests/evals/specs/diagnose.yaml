@@ -1,0 +1,10 @@
+skill: diagnose
+input: |
+  Our API returns a 500 error intermittently on the /checkout endpoint. It only happens
+  under load (10+ concurrent requests). The error log shows "deadlock detected" in
+  PostgreSQL. This started after we deployed a new inventory-decrement feature last week.
+rubric: |
+  - The response prioritises building a reproducible feedback loop before proposing a fix.
+  - The response suggests a concrete mechanism to reproduce the deadlock (e.g. a concurrent-requests script, integration test with parallel transactions, or load test harness).
+  - The response identifies the inventory-decrement feature as the primary suspect.
+  - The response does not jump straight to a fix without first establishing reliable reproduction.

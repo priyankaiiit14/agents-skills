@@ -1,0 +1,14 @@
+skill: improve-codebase-architecture
+input: |
+  Module summary:
+
+  UserService (200 lines): getUserById, updateEmail, updatePassword, updateAddress,
+  deleteUser, listUsers, searchUsers, exportUsers. Each method assembles a raw SQL
+  string inline and calls db.execute() directly.
+
+  Identify architectural improvement opportunities.
+rubric: |
+  - The response uses at least one term from the skill's glossary: module, interface, depth, seam, adapter, or leverage.
+  - The response identifies UserService as shallow (its interface is nearly as complex as its implementation).
+  - The response proposes a concrete deepening opportunity (e.g. extracting a repository seam, hiding SQL behind a typed interface).
+  - The response applies or references the deletion test (what complexity reappears across callers if this module is deleted?).
