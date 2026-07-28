@@ -9,6 +9,15 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      jobs:
+        description: 'Which jobs to run'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - static-only
+          - evals-only
       openai_api_key:
         description: 'OpenAI API key (leave blank to use the OPENAI_API_KEY repo secret)'
         required: false
@@ -24,6 +33,7 @@ on:
 jobs:
   static-gate:
     runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.jobs != 'evals-only'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -32,7 +42,7 @@ jobs:
 
   behavioral-evals:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.jobs != 'static-only'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
