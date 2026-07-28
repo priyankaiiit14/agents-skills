@@ -83,20 +83,34 @@ A lockfile records what's installed and the target/scope used — `skills-lock.j
 
 `install`, `update`, and `status` accept `--target` and `--scope`; `update` reuses the target/scope saved in the lockfile. Run any command with `--help` for details.
 
-## How releases work
+## Publishing to PyPI
 
-Merges to `main` do not auto-publish. A maintainer cuts a release by bumping the version and pushing a tag:
+### One-time setup
 
-1. Bump `version` in `pyproject.toml` and `src/skills_hub/__init__.py`
-2. Commit and push to `main`
-3. Push a tag:
+Done once, before the first release. Publishing uses PyPI [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC) — no API tokens are stored anywhere.
+
+1. Create a [PyPI account](https://pypi.org/account/register/).
+2. Confirm the project name `skills-hub` is free on PyPI (rename it in `pyproject.toml` if taken).
+3. On PyPI, add a **Trusted Publisher** (Account settings → Publishing) with:
+   - Repository: `priyankaiiit14/agents-skills`
+   - Workflow: `publish.yml`
+   - Environment: `pypi`
+4. In the GitHub repo, create an environment named `pypi` (Settings → Environments).
+
+### Cutting a release
+
+Merges to `main` do **not** auto-publish. A maintainer cuts a release by bumping the version and pushing a tag:
+
+1. Bump `version` in `pyproject.toml` and `src/skills_hub/__init__.py` (keep them in sync).
+2. Commit and push to `main`.
+3. Push a matching tag:
 
 ```bash
 git tag v0.2.0
 git push origin v0.2.0
 ```
 
-The GitHub Action builds the package and publishes it to PyPI automatically. Teams can then `uvx skills-hub==0.2.0 install` or use `uvx skills-hub update` to pick up the new version.
+The GitHub Action (`.github/workflows/publish.yml`) verifies the tag matches the package version, builds the package, and publishes it to PyPI. Teams then pin with `uvx skills-hub==0.2.0 install` or run `uvx skills-hub update` to pick up the new version.
 
 ## Contributing a skill
 
