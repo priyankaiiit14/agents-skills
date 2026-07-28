@@ -20,6 +20,8 @@ dev = [
 evals = [
     { name = "openai", version = "2.48.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "openai", version = "2.49.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "pytest", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pyyaml" },
 ]
 
@@ -27,6 +29,7 @@ evals = [
 requires-dist = [
     { name = "openai", marker = "extra == 'evals'", specifier = ">=1.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7" },
+    { name = "pytest", marker = "extra == 'evals'", specifier = ">=7" },
     { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6" },
     { name = "pyyaml", marker = "extra == 'evals'", specifier = ">=6" },
 ]
