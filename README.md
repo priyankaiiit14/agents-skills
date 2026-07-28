@@ -126,24 +126,49 @@ cd agents-skills
 git checkout -b skills/my-skill-name
 uvx agent-skills-bundle create my-skill-name   # scaffolds src/agent_skills_bundle/skills/my-skill-name/SKILL.md
 # edit SKILL.md, then:
+scripts/test.sh                                 # run the merge gate — must pass
 git add src/agent_skills_bundle/skills/my-skill-name
 git commit -m "add my-skill-name skill"
 # open a PR to main
 ```
 
-`create` writes the folder with the required frontmatter already filled in. Then add the skill to the table at the top of this README.
+`create` writes the folder with the required frontmatter already filled in. Then add the skill to the table at the top of this README, and run the tests (see [Testing](#testing)).
 
 ### Update an existing skill
 
 ```bash
 git checkout -b skills/my-skill-name        # or fix/my-skill-name for a bug fix
 # edit src/agent_skills_bundle/skills/my-skill-name/SKILL.md (or its references/, scripts/, assets/)
+scripts/test.sh                             # run the merge gate — must pass
 git add src/agent_skills_bundle/skills/my-skill-name
 git commit -m "update my-skill-name: <what changed>"
 # open a PR to main
 ```
 
 The change ships to users in the next release (see [How releases work](#how-releases-work)). Users pull it with `uvx agent-skills-bundle update`.
+
+### Testing
+
+Run the gate before every PR:
+
+```bash
+scripts/test.sh            # Layer A: static + CLI gate (fast, free) — CI enforces this on main
+scripts/test.sh --evals    # + Layer B: behavioral evals (needs ANTHROPIC_API_KEY)
+```
+
+There are two kinds of tests:
+
+- **Layer A — static + CLI gate.** Deterministic checks that every skill is
+  well-formed (frontmatter, `name` matches folder, README table, resource
+  references resolve, CLI installs it). Runs in CI and **blocks merge**.
+- **Layer B — behavioral evals.** Run a skill against a fixture and grade the
+  output with an LLM-as-judge — proof it actually works. Opt-in (calls the API,
+  costs tokens); not a merge gate.
+
+**What's expected:** keep Layer A green (CI won't let you merge otherwise), and
+add a Layer B eval spec for any new skill with a checkable right answer (drop a
+`tests/evals/specs/<skill>.yaml`). Full details, including how to write a good
+eval, are in [docs/testing.md](docs/testing.md).
 
 ### Branch naming
 

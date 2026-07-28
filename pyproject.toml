@@ -15,9 +15,21 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 
+[project.optional-dependencies]
+# Layer A — deterministic static + CLI gate (fast, free, runs in CI).
+dev = ["pytest>=7", "pyyaml>=6"]
+# Layer B — behavioral evals: an agent run + LLM-as-judge (needs an API key, costs tokens).
+evals = ["anthropic>=0.40", "pyyaml>=6"]
+
 [project.scripts]
 agent-skills-bundle = "agent_skills_bundle.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agent_skills_bundle"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "eval: behavioral eval that calls the model (opt-in; needs RUN_EVALS=1 and ANTHROPIC_API_KEY)",
+]
 

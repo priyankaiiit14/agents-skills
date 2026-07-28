@@ -1,0 +1,19 @@
+name: test
+
+# Merge gate: the deterministic static + CLI checks must pass on every PR to main.
+# Behavioral evals (Layer B) are NOT run here — they need an API key and cost
+# tokens; run them locally with `scripts/test.sh --evals`.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  static-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Layer A — static + CLI gate
+        run: uv run --extra dev pytest tests/test_skills_static.py tests/test_cli.py
