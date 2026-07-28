@@ -29,6 +29,8 @@ from pathlib import Path
 from agent_skills_bundle import __version__
 
 BUNDLED = Path(__file__).parent / "skills"
+SHARED = BUNDLED / "shared_skills"
+PROJECTS = BUNDLED / "project_skills"
 LOCK_FILE = "skills-lock.json"
 GLOBAL_LOCK = Path.home() / ".agent-skills-bundle" / "skills-lock.json"
 AGENT_DIRS = {"claude": ".claude/skills", "codex": ".codex/skills"}
@@ -90,48 +92,126 @@ def sha256_dir(path: Path) -> str:
     return h.hexdigest()
 
 
-def available_skills() -> list[str]:
-    if not BUNDLED.exists():
+def available_shared() -> list[str]:
+    if not SHARED.exists():
         return []
-    return sorted(d.name for d in BUNDLED.iterdir() if d.is_dir() and not d.name.startswith("."))
+    return sorted(d.name for d in SHARED.iterdir() if d.is_dir() and not d.name.startswith("."))
 
 
-def copy_skill(name: str, dest_dir: Path) -> str:
-    """Copy one bundled skill folder into dest_dir/<name>; return its content hash."""
-    src = BUNDLED / name
-    if not src.exists():
-        sys.exit(f"Skill '{name}' not found. Run `agent-skills-bundle list` to see available skills.")
-    dest = dest_dir / name
-    shutil.rmtree(dest, ignore_errors=True)
-    shutil.copytree(src, dest)
-    return sha256_dir(dest)
+def available_project_skills() -> dict[str, list[str]]:
+    """Return {project: [skill, ...]} for all project skills."""
+    if not PROJECTS.exists():
+        return {}
+    out = {}
+    for proj in sorted(PROJECTS.iterdir()):
+        if not proj.is_dir() or proj.name.startswith("."):
+            continue
+        skills = sorted(s.name for s in proj.iterdir() if s.is_dir() and not s.name.startswith("."))
+        if skills:
+            out[proj.name] = skills
+    return out
+
+
+def available_skills() -> list[str]:
+    """Return all installable skill identifiers (shared leaf names + project_skills/proj/skill keys)."""
+    names = list(available_shared())
+    for proj, skills in available_project_skills().items():
+        for skill in skills:
+            names.append(f"project_skills/{proj}/{skill}")
+    return names
+
+
+def install_skill(name: str, dest_dir: Path) -> list[tuple[str, str, str]]:
+    """Install skill(s); return [(lock_key, dest_relative, hash), ...].
+
+    name forms:
+      "review"                             shared skill → flat dest
+      "project_skills/search/query-review" single project skill → flat dest
+      "project_skills/search"              all skills for project → namespaced dest
+    """
+    parts = name.split("/")
+
+    if len(parts) == 1:
+        src = SHARED / name
+        if not src.exists():
+            sys.exit(f"Skill '{name}' not found. Run `agent-skills-bundle list` to see available skills.")
+        dest = dest_dir / name
+        shutil.rmtree(dest, ignore_errors=True)
+        shutil.copytree(src, dest)
+        return [(name, name, sha256_dir(dest))]
+
+    if parts[0] != "project_skills" or len(parts) not in (2, 3):
+        sys.exit(f"Unknown skill identifier: '{name}'. Use 'review', 'project_skills/proj', or 'project_skills/proj/skill'.")
+
+    if len(parts) == 3:
+        _, proj, skill = parts
+        src = PROJECTS / proj / skill
+        if not src.exists():
+            sys.exit(f"Skill '{name}' not found.")
+        dest = dest_dir / skill  # flat
+        shutil.rmtree(dest, ignore_errors=True)
+        shutil.copytree(src, dest)
+        return [(name, skill, sha256_dir(dest))]
+
+    # project-level install: namespaced dest
+    _, proj = parts
+    proj_dir = PROJECTS / proj
+    if not proj_dir.exists():
+        sys.exit(f"Project '{proj}' not found under project_skills/.")
+    results = []
+    for skill_src in sorted(proj_dir.iterdir()):
+        if not skill_src.is_dir() or skill_src.name.startswith("."):
+            continue
+        dest_rel = f"{proj}/{skill_src.name}"
+        dest = dest_dir / dest_rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(dest, ignore_errors=True)
+        shutil.copytree(skill_src, dest)
+        results.append((f"project_skills/{proj}/{skill_src.name}", dest_rel, sha256_dir(dest)))
+    return results
 
 
 # ── commands ──────────────────────────────────────────────────────────────────
 
+def _skill_desc(skill_md: Path) -> str:
+    if not skill_md.exists():
+        return ""
+    for line in skill_md.read_text().splitlines():
+        line = line.strip()
+        if line.startswith("description:"):
+            return line.split(":", 1)[1].strip()
+    return ""
+
+
 def cmd_list(_args):
-    skills = available_skills()
-    if not skills:
+    shared = available_shared()
+    projects = available_project_skills()
+    total = len(shared) + sum(len(s) for s in projects.values())
+    if not total:
         print("No skills bundled in this version.")
         return
-    print(f"agent-skills-bundle v{__version__} — {len(skills)} skill(s) available:\n")
-    for name in skills:
-        skill_md = BUNDLED / name / "SKILL.md"
-        desc = ""
-        if skill_md.exists():
-            for line in skill_md.read_text().splitlines():
-                line = line.strip()
-                if line.startswith("description:"):
-                    desc = line.split(":", 1)[1].strip()
-                    break
-        print(f"  {name:<30} {desc}")
+    print(f"agent-skills-bundle v{__version__} — {total} skill(s) available:\n")
+    if shared:
+        print("Shared skills:")
+        for name in shared:
+            desc = _skill_desc(SHARED / name / "SKILL.md")
+            print(f"  {name:<30} {desc}")
+    if projects:
+        print("\nProject skills:")
+        for proj, skills in projects.items():
+            print(f"  [{proj}]")
+            for skill in skills:
+                desc = _skill_desc(PROJECTS / proj / skill / "SKILL.md")
+                print(f"    {skill:<28} {desc}")
 
 
 def cmd_install(args):
     project = Path(args.project).resolve()
 
     if args.all:
-        wanted = available_skills()
+        wanted = list(available_shared())
+        for proj in available_project_skills():
+            wanted.append(f"project_skills/{proj}")
         if not wanted:
             sys.exit("No skills available to install.")
     elif not args.names:
@@ -144,19 +224,23 @@ def cmd_install(args):
     lock = load_lock(path)
     lock.update({"package_version": __version__, "target": args.target, "scope": args.scope})
 
+    total = 0
     for name in wanted:
         for agent, d in dests.items():
             d.mkdir(parents=True, exist_ok=True)
-            digest = copy_skill(name, d)
-            print(f"  installed  {name}  →  {d / name}  ({agent})")
-        lock["skills"][name] = {
-            "package_version": __version__,
-            "installed_at": datetime.now(timezone.utc).isoformat(),
-            "hash": digest,
-        }
+            entries = install_skill(name, d)
+            for lock_key, dest_rel, digest in entries:
+                print(f"  installed  {lock_key}  →  {d / dest_rel}  ({agent})")
+                lock["skills"][lock_key] = {
+                    "dest": dest_rel,
+                    "package_version": __version__,
+                    "installed_at": datetime.now(timezone.utc).isoformat(),
+                    "hash": digest,
+                }
+                total += 1
 
     save_lock(path, lock)
-    print(f"\n{len(wanted)} skill(s) installed for {args.target} ({args.scope} scope, "
+    print(f"\n{total} skill(s) installed for {args.target} ({args.scope} scope, "
           f"agent-skills-bundle v{__version__})")
 
 
@@ -172,17 +256,33 @@ def cmd_update(args):
 
     target = lock.get("target", "both")
     dests = dest_dirs(target, args.scope, project)
-    available = available_skills()
     updated, skipped = [], []
 
     for name in tracked:
-        if name not in available:
+        parts = name.split("/")
+        if len(parts) == 1:
+            src = SHARED / name
+        elif len(parts) == 3 and parts[0] == "project_skills":
+            src = PROJECTS / parts[1] / parts[2]
+        else:
+            print(f"  warning: unrecognized skill key '{name}', skipping")
+            skipped.append(name)
+            continue
+
+        if not src.exists():
             print(f"  warning: '{name}' is no longer in agent-skills-bundle v{__version__}, skipping")
             skipped.append(name)
             continue
+
+        dest_rel = lock["skills"][name].get("dest", name)  # backwards compat: old entries have no dest
+        digest = ""
         for agent, d in dests.items():
-            d.mkdir(parents=True, exist_ok=True)
-            digest = copy_skill(name, d)
+            dest = d / dest_rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.rmtree(dest, ignore_errors=True)
+            shutil.copytree(src, dest)
+            digest = sha256_dir(dest)
+
         lock["skills"][name].update({
             "package_version": __version__,
             "installed_at": datetime.now(timezone.utc).isoformat(),
@@ -206,24 +306,25 @@ def cmd_status(args):
 
     print(f"agent-skills-bundle v{__version__}  |  scope: {args.scope}  |  "
           f"target: {lock.get('target', '?')}  |  lock: {path}\n")
-    print(f"  {'SKILL':<30} {'INSTALLED':<10} {'PKG VERSION'}")
-    print(f"  {'-'*30} {'-'*10} {'-'*11}")
+    print(f"  {'SKILL':<40} {'INSTALLED':<10} {'PKG VERSION'}")
+    print(f"  {'-'*40} {'-'*10} {'-'*11}")
 
     for name in sorted(available):
         if name in installed:
             pkg_ver = installed[name].get("package_version", "?")
             flag = "✓" if pkg_ver == __version__ else f"← was {pkg_ver}"
-            print(f"  {name:<30} {'yes':<10} {flag}")
+            print(f"  {name:<40} {'yes':<10} {flag}")
         else:
-            print(f"  {name:<30} {'no':<10} available")
+            print(f"  {name:<40} {'no':<10} available")
 
     for name in sorted(set(installed) - available):
-        print(f"  {name:<30} {'yes':<10} ← removed from v{__version__}")
+        print(f"  {name:<40} {'yes':<10} ← removed from v{__version__}")
 
 
 def cmd_create(args):
     name = args.name.lower().replace(" ", "-")
-    skills_src = Path(os.getcwd()) / "src" / "agent_skills_bundle" / "skills"
+    repo_root = Path(os.getcwd())
+    skills_src = repo_root / "src" / "agent_skills_bundle" / "skills"
 
     if not skills_src.exists():
         sys.exit(
@@ -231,11 +332,20 @@ def cmd_create(args):
             "Run this command from the root of the agent-skills-bundle repo."
         )
 
-    dest = skills_src / name
+    if args.project_name:
+        proj = args.project_name.lower().replace(" ", "-")
+        dest = skills_src / "project_skills" / proj / name
+        rel = f"project_skills/{proj}/{name}"
+        install_hint = f"project_skills/{proj}/{name}"
+    else:
+        dest = skills_src / "shared_skills" / name
+        rel = f"shared_skills/{name}"
+        install_hint = name
+
     if dest.exists():
         sys.exit(f"Skill '{name}' already exists at {dest}")
 
-    dest.mkdir()
+    dest.mkdir(parents=True)
     skill_file = dest / "SKILL.md"
     skill_file.write_text(
         SKILL_TEMPLATE.format(name=name, title=name.replace("-", " ").title())
@@ -244,8 +354,9 @@ def cmd_create(args):
     print(f"\nNext steps:")
     print(f"  1. Edit {skill_file}")
     print(f"  2. git checkout -b skills/{name}")
-    print(f"  3. git add src/agent_skills_bundle/skills/{name} && git commit -m 'add {name} skill'")
+    print(f"  3. git add src/agent_skills_bundle/skills/{rel} && git commit -m 'add {name} skill'")
     print(f"  4. Open a PR to main")
+    print(f"\nInstall locally with: agent-skills-bundle install {install_hint}")
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
@@ -286,6 +397,10 @@ def main():
 
     p_create = sub.add_parser("create", help="Scaffold a new skill (run from agent-skills-bundle repo root)")
     p_create.add_argument("name", help="Skill name (e.g. data-pipeline-review)")
+    p_create.add_argument(
+        "--project-name", default=None, metavar="PROJECT",
+        help="Create under project_skills/<PROJECT>/ instead of shared_skills/ (e.g. --project-name search)",
+    )
 
     args = parser.parse_args()
     {

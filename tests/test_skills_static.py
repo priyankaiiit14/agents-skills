@@ -19,6 +19,7 @@ from conftest import (
     REPO_ROOT,
     RESOURCE_EXTS,
     load_skill,
+    skill_dir,
     skill_names,
 )
 
@@ -36,7 +37,7 @@ def test_at_least_one_skill():
 
 @pytest.mark.parametrize("name", SKILLS)
 def test_skill_md_exists(name):
-    assert (REPO_ROOT / "src" / "agent_skills_bundle" / "skills" / name / "SKILL.md").is_file()
+    assert (skill_dir(name) / "SKILL.md").is_file()
 
 
 @pytest.mark.parametrize("name", SKILLS)
@@ -49,7 +50,8 @@ def test_frontmatter_is_valid(name):
     assert not unknown, f"unknown frontmatter key(s): {sorted(unknown)}"
 
     assert isinstance(frontmatter.get("name"), str) and frontmatter["name"].strip(), "name missing"
-    assert frontmatter["name"] == name, f"name '{frontmatter['name']}' != folder '{name}'"
+    leaf = name.split("/")[-1]
+    assert frontmatter["name"] == leaf, f"name '{frontmatter['name']}' != folder '{leaf}'"
 
     desc = frontmatter.get("description")
     assert isinstance(desc, str) and desc.strip(), "description missing/empty"
@@ -80,7 +82,8 @@ def test_resource_references_resolve(name):
 
 def test_readme_lists_every_skill():
     readme = (REPO_ROOT / "README.md").read_text()
-    missing = [n for n in SKILLS if f"`{n}`" not in readme]
+    # Check by leaf name so both shared and project skills match README entries.
+    missing = [n for n in SKILLS if f"`{n.split('/')[-1]}`" not in readme]
     assert not missing, f"skills absent from README 'Available Skills' table: {missing}"
 
 
@@ -92,10 +95,24 @@ def test_lockfile_has_no_dangling_entries():
 
 
 def test_every_skill_has_an_eval_spec():
-    """Every bundled skill must have a behavioral eval spec in tests/evals/specs/."""
+    """Every bundled skill must have a behavioral eval spec in tests/evals/specs/.
+
+    Shared skills: specs/<skill>.yaml
+    Project skills: specs/<project>/<skill>.yaml
+    """
     specs_dir = REPO_ROOT / "tests" / "evals" / "specs"
-    missing = [n for n in SKILLS if not (specs_dir / f"{n}.yaml").is_file()]
+
+    def spec_path(name: str):
+        parts = name.split("/")
+        if len(parts) == 1:
+            return specs_dir / f"{name}.yaml"
+        _, proj, skill = parts
+        return specs_dir / proj / f"{skill}.yaml"
+
+    missing = [n for n in SKILLS if not spec_path(n).is_file()]
     assert not missing, (
         f"skills missing a behavioral eval spec in tests/evals/specs/: {missing}\n"
-        "Add a <skill>.yaml there — see tests/evals/README.md."
+        "Shared skills: add tests/evals/specs/<skill>.yaml\n"
+        "Project skills: add tests/evals/specs/<project>/<skill>.yaml\n"
+        "See tests/evals/README.md."
     )

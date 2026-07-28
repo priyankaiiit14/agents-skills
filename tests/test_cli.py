@@ -34,7 +34,11 @@ def test_install_all_copies_skills_and_writes_lock(tmp_path):
     names = skill_names()
     for agent_dir in (".claude/skills", ".codex/skills"):
         for name in names:
-            assert (tmp_path / agent_dir / name / "SKILL.md").is_file()
+            parts = name.split("/")
+            # shared → flat dest; project → namespaced dest (drop "project_skills/" prefix)
+            dest = "/".join(parts[1:]) if len(parts) == 3 else name
+            assert (tmp_path / agent_dir / dest / "SKILL.md").is_file(), \
+                f"{agent_dir}/{dest}/SKILL.md missing for skill '{name}'"
 
     lock = json.loads((tmp_path / "skills-lock.json").read_text())
     assert set(lock["skills"]) == set(names)
