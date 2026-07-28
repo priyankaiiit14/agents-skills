@@ -2,8 +2,8 @@ name: Publish to PyPI
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 jobs:
   publish:
@@ -19,17 +19,24 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Verify tag matches package version
+      - name: Check if version is already on PyPI
+        id: version_check
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG=$(uvx hatch version)
-          if [ "$TAG" != "$PKG" ]; then
-            echo "Tag $TAG does not match package version $PKG"
-            exit 1
+          PKG_VERSION=$(uvx hatch version)
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://pypi.org/pypi/agent-skills-bundle/${PKG_VERSION}/json")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Version $PKG_VERSION already on PyPI — skipping publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version $PKG_VERSION is new — will publish."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build
+        if: steps.version_check.outputs.skip == 'false'
         run: uv build
 
       - name: Publish
+        if: steps.version_check.outputs.skip == 'false'
         uses: pypa/gh-action-pypi-publish@release/v1
