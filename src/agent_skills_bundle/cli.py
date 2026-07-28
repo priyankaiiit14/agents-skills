@@ -29,8 +29,8 @@ from pathlib import Path
 from agent_skills_bundle import __version__
 
 BUNDLED = Path(__file__).parent / "skills"
-SHARED = BUNDLED / "shared_skills"
-PROJECTS = BUNDLED / "project_skills"
+SHARED = BUNDLED / "core"
+PROJECTS = BUNDLED / "domain"
 LOCK_FILE = "skills-lock.json"
 GLOBAL_LOCK = Path.home() / ".agent-skills-bundle" / "skills-lock.json"
 AGENT_DIRS = {"claude": ".claude/skills", "codex": ".codex/skills"}
@@ -98,7 +98,7 @@ def available_shared() -> list[str]:
     return sorted(d.name for d in SHARED.iterdir() if d.is_dir() and not d.name.startswith("."))
 
 
-def available_project_skills() -> dict[str, list[str]]:
+def available_domain() -> dict[str, list[str]]:
     """Return {project: [skill, ...]} for all project skills."""
     if not PROJECTS.exists():
         return {}
@@ -113,11 +113,11 @@ def available_project_skills() -> dict[str, list[str]]:
 
 
 def available_skills() -> list[str]:
-    """Return all installable skill identifiers (shared leaf names + project_skills/proj/skill keys)."""
+    """Return all installable skill identifiers (shared leaf names + domain/proj/skill keys)."""
     names = list(available_shared())
-    for proj, skills in available_project_skills().items():
+    for proj, skills in available_domain().items():
         for skill in skills:
-            names.append(f"project_skills/{proj}/{skill}")
+            names.append(f"domain/{proj}/{skill}")
     return names
 
 
@@ -126,8 +126,8 @@ def install_skill(name: str, dest_dir: Path) -> list[tuple[str, str, str]]:
 
     name forms:
       "review"                             shared skill → flat dest
-      "project_skills/search/query-review" single project skill → flat dest
-      "project_skills/search"              all skills for project → namespaced dest
+      "domain/search/query-review" single project skill → flat dest
+      "domain/search"              all skills for project → namespaced dest
     """
     parts = name.split("/")
 
@@ -140,8 +140,8 @@ def install_skill(name: str, dest_dir: Path) -> list[tuple[str, str, str]]:
         shutil.copytree(src, dest)
         return [(name, name, sha256_dir(dest))]
 
-    if parts[0] != "project_skills" or len(parts) not in (2, 3):
-        sys.exit(f"Unknown skill identifier: '{name}'. Use 'review', 'project_skills/proj', or 'project_skills/proj/skill'.")
+    if parts[0] != "domain" or len(parts) not in (2, 3):
+        sys.exit(f"Unknown skill identifier: '{name}'. Use 'review', 'domain/proj', or 'domain/proj/skill'.")
 
     if len(parts) == 3:
         _, proj, skill = parts
@@ -157,7 +157,7 @@ def install_skill(name: str, dest_dir: Path) -> list[tuple[str, str, str]]:
     _, proj = parts
     proj_dir = PROJECTS / proj
     if not proj_dir.exists():
-        sys.exit(f"Project '{proj}' not found under project_skills/.")
+        sys.exit(f"Project '{proj}' not found under domain/.")
     results = []
     for skill_src in sorted(proj_dir.iterdir()):
         if not skill_src.is_dir() or skill_src.name.startswith("."):
@@ -167,7 +167,7 @@ def install_skill(name: str, dest_dir: Path) -> list[tuple[str, str, str]]:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.rmtree(dest, ignore_errors=True)
         shutil.copytree(skill_src, dest)
-        results.append((f"project_skills/{proj}/{skill_src.name}", dest_rel, sha256_dir(dest)))
+        results.append((f"domain/{proj}/{skill_src.name}", dest_rel, sha256_dir(dest)))
     return results
 
 
@@ -185,7 +185,7 @@ def _skill_desc(skill_md: Path) -> str:
 
 def cmd_list(_args):
     shared = available_shared()
-    projects = available_project_skills()
+    projects = available_domain()
     total = len(shared) + sum(len(s) for s in projects.values())
     if not total:
         print("No skills bundled in this version.")
@@ -210,8 +210,8 @@ def cmd_install(args):
 
     if args.all:
         wanted = list(available_shared())
-        for proj in available_project_skills():
-            wanted.append(f"project_skills/{proj}")
+        for proj in available_domain():
+            wanted.append(f"domain/{proj}")
         if not wanted:
             sys.exit("No skills available to install.")
     elif not args.names:
@@ -262,7 +262,7 @@ def cmd_update(args):
         parts = name.split("/")
         if len(parts) == 1:
             src = SHARED / name
-        elif len(parts) == 3 and parts[0] == "project_skills":
+        elif len(parts) == 3 and parts[0] == "domain":
             src = PROJECTS / parts[1] / parts[2]
         else:
             print(f"  warning: unrecognized skill key '{name}', skipping")
@@ -334,12 +334,12 @@ def cmd_create(args):
 
     if args.project_name:
         proj = args.project_name.lower().replace(" ", "-")
-        dest = skills_src / "project_skills" / proj / name
-        rel = f"project_skills/{proj}/{name}"
-        install_hint = f"project_skills/{proj}/{name}"
+        dest = skills_src / "domain" / proj / name
+        rel = f"domain/{proj}/{name}"
+        install_hint = f"domain/{proj}/{name}"
     else:
-        dest = skills_src / "shared_skills" / name
-        rel = f"shared_skills/{name}"
+        dest = skills_src / "core" / name
+        rel = f"core/{name}"
         install_hint = name
 
     if dest.exists():
@@ -399,7 +399,7 @@ def main():
     p_create.add_argument("name", help="Skill name (e.g. data-pipeline-review)")
     p_create.add_argument(
         "--project-name", default=None, metavar="PROJECT",
-        help="Create under project_skills/<PROJECT>/ instead of shared_skills/ (e.g. --project-name search)",
+        help="Create under domain/<PROJECT>/ instead of core/ (e.g. --project-name search)",
     )
 
     args = parser.parse_args()

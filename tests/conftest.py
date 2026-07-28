@@ -15,8 +15,8 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "src" / "agent_skills_bundle" / "skills"
-SHARED_DIR = SKILLS_DIR / "shared_skills"
-PROJECTS_DIR = SKILLS_DIR / "project_skills"
+SHARED_DIR = SKILLS_DIR / "core"
+PROJECTS_DIR = SKILLS_DIR / "domain"
 
 # The only frontmatter keys any bundled skill uses today. New keys must be added
 # here deliberately so a typo (e.g. `user-invocabl`) fails the gate instead of
