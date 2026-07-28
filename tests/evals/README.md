@@ -20,6 +20,29 @@ RUN_EVALS=1 uv run --extra evals pytest tests/test_evals.py -v
 `.env` file is loaded automatically by `scripts/test.sh` if present — put your
 `OPENAI_API_KEY=...` there and it won't be needed on the command line.
 
+### Run a single skill
+
+Use pytest's `-k` flag with the spec filename stem (i.e. the skill name):
+
+```bash
+RUN_EVALS=1 uv run --extra evals pytest tests/test_evals.py -k caveman
+# multiple skills:
+RUN_EVALS=1 uv run --extra evals pytest tests/test_evals.py -k "grill-me or grill-with-docs"
+```
+
+### See failure reasons
+
+When a test fails, pytest truncates long assert messages by default. Run with
+`-s` to print the judge's reasoning and the full skill output:
+
+```bash
+RUN_EVALS=1 uv run --extra evals pytest tests/test_evals.py -v -s -k caveman
+```
+
+The failure output includes two sections:
+- **judge reasoning** — which rubric criteria weren't met and why
+- **raw output** — exactly what the skill produced for the fixture input
+
 Models (both env-overridable, see `runner.py`):
 
 - `EVAL_EXECUTOR_MODEL` — runs the skill under test. Default `gpt-4o`.
