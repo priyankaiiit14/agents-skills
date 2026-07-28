@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """
-skills-hub — install and manage agent skills.
+skills-hub — install and manage agent skills for Claude Code and Codex.
+
+Skills are SKILL.md folders — a cross-agent standard. The same folder works in
+Claude Code (.claude/skills/) and Codex (.codex/skills/) unmodified.
 
 Usage:
-  skills-hub list                        # list all available skills
-  skills-hub install review              # install one skill
-  skills-hub install review tdd          # install multiple
-  skills-hub install --all               # install everything
-  skills-hub update                      # re-install tracked skills (pick up new version)
-  skills-hub status                      # show installed vs available
-  skills-hub create my-skill             # scaffold a new skill for contribution
+  skills-hub list                                 # list available skills
+  skills-hub install review                       # install one skill (both agents, project)
+  skills-hub install review tdd                   # install multiple
+  skills-hub install --all                        # install everything
+  skills-hub install review --target claude       # Claude only
+  skills-hub install review --scope global        # machine-wide (~/.claude, ~/.codex)
+  skills-hub update                               # re-install tracked skills (pick up new version)
+  skills-hub status                               # show installed vs available
+  skills-hub create my-skill                      # scaffold a new skill for contribution
 """
 
 import argparse
@@ -25,6 +30,8 @@ from skills_hub import __version__
 
 BUNDLED = Path(__file__).parent / "skills"
 LOCK_FILE = "skills-lock.json"
+GLOBAL_LOCK = Path.home() / ".skills-hub" / "skills-lock.json"
+AGENT_DIRS = {"claude": ".claude/skills", "codex": ".codex/skills"}
 SKILL_TEMPLATE = """\
 ---
 name: {name}
@@ -47,17 +54,29 @@ How to confirm the skill completed successfully.
 """
 
 
-# ── lockfile ──────────────────────────────────────────────────────────────────
+# ── destinations & lockfile ─────────────────────────────────────────────────────
 
-def load_lock(project: Path) -> dict:
-    p = project / LOCK_FILE
-    if p.exists():
-        return json.loads(p.read_text())
-    return {"version": 1, "package_version": None, "skills": {}}
+def dest_dirs(target: str, scope: str, project: Path) -> dict[str, Path]:
+    """Map each selected agent to its skills directory for the given scope."""
+    root = Path.home() if scope == "global" else project
+    agents = ["claude", "codex"] if target == "both" else [target]
+    return {a: root / AGENT_DIRS[a] for a in agents}
 
 
-def save_lock(project: Path, lock: dict) -> None:
-    (project / LOCK_FILE).write_text(json.dumps(lock, indent=2) + "\n")
+def lock_path(scope: str, project: Path) -> Path:
+    return GLOBAL_LOCK if scope == "global" else project / LOCK_FILE
+
+
+def load_lock(path: Path) -> dict:
+    if path.exists():
+        return json.loads(path.read_text())
+    return {"version": 1, "package_version": None, "target": "both",
+            "scope": "project", "skills": {}}
+
+
+def save_lock(path: Path, lock: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(lock, indent=2) + "\n")
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -77,11 +96,12 @@ def available_skills() -> list[str]:
     return sorted(d.name for d in BUNDLED.iterdir() if d.is_dir() and not d.name.startswith("."))
 
 
-def install_skill(name: str, skills_dir: Path) -> str:
+def copy_skill(name: str, dest_dir: Path) -> str:
+    """Copy one bundled skill folder into dest_dir/<name>; return its content hash."""
     src = BUNDLED / name
     if not src.exists():
         sys.exit(f"Skill '{name}' not found. Run `skills-hub list` to see available skills.")
-    dest = skills_dir / name
+    dest = dest_dir / name
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(src, dest)
     return sha256_dir(dest)
@@ -109,46 +129,49 @@ def cmd_list(_args):
 
 def cmd_install(args):
     project = Path(args.project).resolve()
-    skills_dir = project / ".claude" / "skills"
-    skills_dir.mkdir(parents=True, exist_ok=True)
 
     if args.all:
         wanted = available_skills()
         if not wanted:
             sys.exit("No skills available to install.")
+    elif not args.names:
+        sys.exit("Provide skill name(s) or use --all.")
     else:
-        if not args.names:
-            sys.exit("Provide skill name(s) or use --all.")
         wanted = args.names
 
-    lock = load_lock(project)
-    lock["package_version"] = __version__
+    dests = dest_dirs(args.target, args.scope, project)
+    path = lock_path(args.scope, project)
+    lock = load_lock(path)
+    lock.update({"package_version": __version__, "target": args.target, "scope": args.scope})
 
     for name in wanted:
-        digest = install_skill(name, skills_dir)
+        for agent, d in dests.items():
+            d.mkdir(parents=True, exist_ok=True)
+            digest = copy_skill(name, d)
+            print(f"  installed  {name}  →  {d / name}  ({agent})")
         lock["skills"][name] = {
             "package_version": __version__,
             "installed_at": datetime.now(timezone.utc).isoformat(),
             "hash": digest,
         }
-        print(f"  installed  {name}  →  {skills_dir / name}")
 
-    save_lock(project, lock)
-    print(f"\n{len(wanted)} skill(s) installed (skills-hub v{__version__})")
+    save_lock(path, lock)
+    print(f"\n{len(wanted)} skill(s) installed for {args.target} ({args.scope} scope, "
+          f"skills-hub v{__version__})")
 
 
 def cmd_update(args):
     project = Path(args.project).resolve()
-    lock = load_lock(project)
+    path = lock_path(args.scope, project)
+    lock = load_lock(path)
 
     tracked = list(lock["skills"].keys())
     if not tracked:
-        print("No skills tracked in skills-lock.json. Run `skills-hub install` first.")
+        print(f"No skills tracked in {path}. Run `skills-hub install` first.")
         return
 
-    skills_dir = project / ".claude" / "skills"
-    skills_dir.mkdir(parents=True, exist_ok=True)
-
+    target = lock.get("target", "both")
+    dests = dest_dirs(target, args.scope, project)
     available = available_skills()
     updated, skipped = [], []
 
@@ -157,7 +180,9 @@ def cmd_update(args):
             print(f"  warning: '{name}' is no longer in skills-hub v{__version__}, skipping")
             skipped.append(name)
             continue
-        digest = install_skill(name, skills_dir)
+        for agent, d in dests.items():
+            d.mkdir(parents=True, exist_ok=True)
+            digest = copy_skill(name, d)
         lock["skills"][name].update({
             "package_version": __version__,
             "installed_at": datetime.now(timezone.utc).isoformat(),
@@ -167,17 +192,20 @@ def cmd_update(args):
         updated.append(name)
 
     lock["package_version"] = __version__
-    save_lock(project, lock)
-    print(f"\n{len(updated)} updated, {len(skipped)} skipped (skills-hub v{__version__})")
+    save_lock(path, lock)
+    print(f"\n{len(updated)} updated, {len(skipped)} skipped ({args.scope} scope, "
+          f"skills-hub v{__version__})")
 
 
 def cmd_status(args):
     project = Path(args.project).resolve()
-    lock = load_lock(project)
+    path = lock_path(args.scope, project)
+    lock = load_lock(path)
     available = set(available_skills())
     installed = lock.get("skills", {})
 
-    print(f"skills-hub v{__version__}  |  project: {project}\n")
+    print(f"skills-hub v{__version__}  |  scope: {args.scope}  |  "
+          f"target: {lock.get('target', '?')}  |  lock: {path}\n")
     print(f"  {'SKILL':<30} {'INSTALLED':<10} {'PKG VERSION'}")
     print(f"  {'-'*30} {'-'*10} {'-'*11}")
 
@@ -222,6 +250,15 @@ def cmd_create(args):
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+def add_scope(p):
+    p.add_argument("--project", default=os.getcwd(), help="Target project dir (default: cwd)")
+    p.add_argument(
+        "--scope", choices=["project", "global"], default="project",
+        help="project: <project>/.claude|.codex/skills (committed, team-shared). "
+             "global: ~/.claude|.codex/skills (personal, all projects).",
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="skills-hub",
@@ -230,24 +267,23 @@ def main():
     parser.add_argument("--version", action="version", version=f"skills-hub {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # list
     sub.add_parser("list", help="List available skills in this version")
 
-    # install
-    p_install = sub.add_parser("install", help="Install skill(s) into a project")
+    p_install = sub.add_parser("install", help="Install skill(s)")
     p_install.add_argument("names", nargs="*", help="Skill name(s) to install")
     p_install.add_argument("--all", action="store_true", help="Install all available skills")
-    p_install.add_argument("--project", default=os.getcwd(), help="Target project dir (default: cwd)")
+    p_install.add_argument(
+        "--target", choices=["claude", "codex", "both"], default="both",
+        help="Which agent(s) to install for (default: both)",
+    )
+    add_scope(p_install)
 
-    # update
     p_update = sub.add_parser("update", help="Update installed skills to the current package version")
-    p_update.add_argument("--project", default=os.getcwd(), help="Target project dir (default: cwd)")
+    add_scope(p_update)
 
-    # status
     p_status = sub.add_parser("status", help="Show installed vs available skills")
-    p_status.add_argument("--project", default=os.getcwd(), help="Target project dir (default: cwd)")
+    add_scope(p_status)
 
-    # create
     p_create = sub.add_parser("create", help="Scaffold a new skill (run from skills-hub repo root)")
     p_create.add_argument("name", help="Skill name (e.g. data-pipeline-review)")
 
