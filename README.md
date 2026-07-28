@@ -2,33 +2,6 @@
 
 Packaged agent skills for Claude Code and Codex. Skills are `SKILL.md` folders — a cross-agent standard, so the same skill works in both tools unmodified. `install` copies them into the directories each agent auto-discovers (`.claude/skills/` and `.codex/skills/`), and every tool picks them up automatically.
 
-## Available Skills
-
-| Skill | Purpose |
-| --- | --- |
-| `caveman` | Ultra-compressed communication mode, cuts token usage ~75%. |
-| `context-audit` | Audit your Claude Code setup for token waste and context bloat. |
-| `diagnose` | Disciplined diagnosis loop for hard bugs and performance regressions. |
-| `fewer-permission-prompts` | Add allow rules to reduce repetitive permission prompts. |
-| `find-skills` | Discover and install agent skills for a given task. |
-| `grill-me` | Interview-style stress-test of a plan or design. |
-| `grill-with-docs` | Grilling session that challenges your plan against the domain model and updates docs inline. |
-| `improve-codebase-architecture` | Find refactoring and architecture improvement opportunities. |
-| `init` | Initialize a CLAUDE.md for the current project. |
-| `jira-helper` | Create, draft, query, and summarize Jira Cloud tickets from conversations, notes, or files. |
-| `pm` | Parallelized work breakdown, effort estimates, and team-ready task list. |
-| `prompt-prep` | Prepare a compact, structured Agent task prompt from a small set of inputs. |
-| `review` | Review a pull request or branch changes for bugs and improvements. |
-| `security-review` | Security-focused review of changed code. Checks for OWASP top 10. |
-| `setup-skills` | Scaffold per-repo config (issue tracker, triage labels, domain docs) for engineering skills. |
-| `simplify` | Review changed code for unnecessary complexity and fix it. |
-| `tdd` | Test-driven development with red-green-refactor loop. |
-| `to-issues` | Break a plan or PRD into independently-grabbable issues on the issue tracker. |
-| `to-prd` | Turn the current conversation context into a PRD on the issue tracker. |
-| `triage` | Move issues through a triage state machine. |
-| `write-a-skill` | Create new agent skills with proper structure. |
-| `zoom-out` | Step back and assess the bigger picture of a codebase or problem. |
-
 ## Install
 
 Two ways to install — identical result. Pick whichever fits your team.
@@ -200,3 +173,30 @@ name: my-skill-name
 description: One-line description of what this skill does and when to invoke it.
 ---
 ```
+
+## Available Skills
+
+| Skill | Purpose |
+| --- | --- |
+| `caveman` | Ultra-compressed communication mode, cuts token usage ~75%. |
+| `context-audit` | Audit your Claude Code setup for token waste and context bloat. |
+| `diagnose` | Disciplined diagnosis loop for hard bugs and performance regressions. |
+| `fewer-permission-prompts` | Add allow rules to reduce repetitive permission prompts. |
+| `find-skills` | Discover and install agent skills for a given task. |
+| `grill-me` | Interview-style stress-test of a plan or design. |
+| `grill-with-docs` | Grilling session that challenges your plan against the domain model and updates docs inline. |
+| `improve-codebase-architecture` | Find refactoring and architecture improvement opportunities. |
+| `init` | Initialize a CLAUDE.md for the current project. |
+| `jira-helper` | Create, draft, query, and summarize Jira Cloud tickets from conversations, notes, or files. |
+| `pm` | Parallelized work breakdown, effort estimates, and team-ready task list. |
+| `prompt-prep` | Prepare a compact, structured Agent task prompt from a small set of inputs. |
+| `review` | Review a pull request or branch changes for bugs and improvements. |
+| `security-review` | Security-focused review of changed code. Checks for OWASP top 10. |
+| `setup-skills` | Scaffold per-repo config (issue tracker, triage labels, domain docs) for engineering skills. |
+| `simplify` | Review changed code for unnecessary complexity and fix it. |
+| `tdd` | Test-driven development with red-green-refactor loop. |
+| `to-issues` | Break a plan or PRD into independently-grabbable issues on the issue tracker. |
+| `to-prd` | Turn the current conversation context into a PRD on the issue tracker. |
+| `triage` | Move issues through a triage state machine. |
+| `write-a-skill` | Create new agent skills with proper structure. |
+| `zoom-out` | Step back and assess the bigger picture of a codebase or problem. |
