@@ -12,6 +12,9 @@ jira-routing.yaml
 # Claude Code generated session artifact
 statusline-input.json
 
+# Claude Code project settings (personal, belongs in ~/.claude/settings.json)
+settings.json
+
 # Python
 dist/
 build/
