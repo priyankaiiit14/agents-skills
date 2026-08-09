@@ -1,11 +1,26 @@
 ---
 name: system-design-interview
-description: Use this skill when preparing for or walking through a system design interview for a web service, API, or distributed backend system (e.g., 'design Ticketmaster', 'design a URL shortener', 'design an Uber-like ride matching system', 'design a rate limiter'). Provides a repeatable 5-step framework — requirements, core entities, API design, high-level design, deep dives — covering tradeoffs like consistency vs. availability, contention/locking patterns (reserve-and-confirm flows, distributed locks with TTL), caching layers, and surge handling (SSE/WebSockets, virtual waiting queues). Do NOT use this for data pipeline, ETL, or data platform design questions — use the data-engineering system design skill for those instead.
+description: "Use this skill when preparing for or walking through a system design interview for a web service, API, or distributed backend system (e.g., 'design Ticketmaster', 'design a URL shortener', 'design an Uber-like ride matching system', 'design a rate limiter'). Provides a repeatable 5-step framework — requirements, core entities, API design, high-level design, deep dives — covering tradeoffs like consistency vs. availability, contention/locking patterns (reserve-and-confirm flows, distributed locks with TTL), caching layers, and surge handling (SSE/WebSockets, virtual waiting queues). Do NOT use this for data pipeline, ETL, or data platform design questions — use the data-engineering system design skill for those instead."
+license: Personal use
 ---
 
 # System Design Interview Framework
 
 A repeatable 5-step process for any system design interview, generalized from a Ticketmaster-style breakdown. Timebox: ~35-45 min interview → roughly 5 / 5 / 5 / 15 / 15 minutes across the steps below.
+
+## Non-negotiable rule: tradeoffs are said in the same breath as the decision, never saved for a wrap-up section
+
+The most common way this framework gets executed badly: stating a clean sequence of conclusions ("I'll use microservices," "I'll use SQL," "I'll use a Redis lock with TTL"), and then explaining tradeoffs in a separate recap at the end. That reads as reciting facts, not reasoning live — the interviewer wants to see the comparison happen in front of them, at the moment you commit to something.
+
+Use this template at the moment of each decision, not after:
+
+> "I'm choosing **[X]** over **[Y]** because **[the requirement it satisfies that Y doesn't]**. The cost is **[what you give up]**, which I'm accepting because **[why that's tolerable given the requirements]**."
+
+Bad (backloaded): *"I'll use SQL for the primary datastore... [several more unqualified decisions]... In terms of tradeoffs, SQL vs NoSQL: SQL gives ACID guarantees but is harder to scale horizontally."*
+
+Good (inline): *"I'm going with SQL here over a NoSQL store — NoSQL would give me easier horizontal write scaling, but bookings have foreign-key relationships (ticket → event → venue) and need transactional guarantees to avoid double-booking, so I'm accepting the extra work of scaling SQL later in exchange for correctness now."*
+
+A closing tradeoffs recap is fine as a summary, but it should repeat things you already justified live — not be the first time a tradeoff appears.
 
 ---
 
@@ -30,6 +45,8 @@ Qualities of the system, not features. Standard menu to pull from:
 - **Scalability** — expected scale (users, QPS, data volume) — enough to justify design decisions, not full BOTEC yet.
 - **Latency** — which operations need to feel instant vs. can be async?
 - **Durability / fault tolerance** — what can never be lost (payments, bookings) vs. what can be regenerated/re-fetched (a cache, a search index)?
+
+> **Say the reject, not just the pick:** for consistency-vs-availability specifically — name which subsystem you're choosing availability for and what correctness risk you're knowingly accepting there (e.g., "for search I'm accepting a few seconds of staleness in exchange for never blocking a browse request").
 
 **Tip:** Don't do back-of-envelope math here just to show you can. Only calculate numbers when they directly change a design decision later (e.g., "at this QPS we need to shard" or "this justifies a cache").
 
@@ -68,6 +85,8 @@ Walk through your API list one endpoint (or flow) at a time, and draw the compon
 - **SQL vs. NoSQL** — pick based on relationships and consistency needs, not dogma. If entities have foreign keys / 1:many / transactional needs → SQL. Don't get pulled into a SQL-vs-NoSQL religious debate in the interview; what matters is which *properties* (ACID, schema flexibility, query patterns) you need.
 - **Naive-first, then optimize** — it's fine to say "a naive `SELECT` here would work but will be slow at scale — I'll come back to this in deep dives." This shows you know where the bottleneck is without prematurely over-engineering.
 
+> **Say the reject, not just the pick:** for SQL vs. NoSQL specifically — name the property the rejected option would have given you (e.g., "NoSQL would scale writes more easily, but I need transactional guarantees across foreign-key relationships, so I'm accepting the harder horizontal-scaling story that comes with SQL").
+
 ### Handling contention / write conflicts (generalizes beyond ticketing — applies to inventory, seat/slot booking, auctions, limited drops)
 Walk through the maturity ladder of solutions and pick the best one — this progression itself is a strong signal in interviews:
 1. **Status column only** (`available/reserved/booked`) — simple, but a reserved-and-abandoned item stays stuck forever.
@@ -75,6 +94,8 @@ Walk through the maturity ladder of solutions and pick the best one — this pro
 3. **Status + timestamp, reaped by a cron job** — decouples reads from cleanup, but introduces lag: if the cron job runs every N minutes and misses a cycle, effective hold time balloons to ~2N instead of N.
 4. **Distributed lock with TTL (e.g., Redis key per resource ID, TTL = hold duration)** — best of both: no polling, no stale reads, and expiry is automatic and precise. On confirm, the app releases the lock manually before TTL; on abandonment, Redis expires it for free.
    - **Failure mode to call out:** if the lock store goes down, you temporarily lose the "soft hold" UX, but you never get true double-booking/double-allocation because the source-of-truth DB still enforces correctness via ACID transactions + optimistic concurrency control (OCC) or row-level locking. Explicitly say: *"Losing the lock store degrades UX (a user might get a payment-time conflict), but it's strictly better than the cron-job failure mode, where all items could appear falsely unavailable."*
+
+> **Say the reject, not just the pick:** walking the maturity ladder above already does this — make sure you actually narrate *why* you're rejecting steps 1-3 as you pass through them, not just presenting step 4 as the answer with no visible path to get there.
 
 ### Talking points that impress interviewers here
 - Name the concurrency mechanism your database actually uses (e.g., Postgres uses MVCC — transactions see a consistent snapshot, avoiding read/write blocking) rather than hand-waving "the database handles it."
@@ -124,12 +145,13 @@ Common deep-dive themes to have ready (pick whichever match the problem):
 
 - [ ] Asked clarifying questions before assuming scope
 - [ ] Named functional requirements as user-facing capabilities
-- [ ] Identified the consistency-vs-availability tradeoff and *where in the system* it applies
+- [ ] Identified the consistency-vs-availability tradeoff, *where in the system* it applies, and what correctness risk is being knowingly accepted on the availability side
 - [ ] Listed 3-6 core entities without over-specifying fields early
 - [ ] Mapped every functional requirement to at least one API call
 - [ ] Avoided leaking user identity into request bodies where auth context should be used instead
-- [ ] Chose SQL/NoSQL and monolith/microservices with a stated reason, not by default habit
-- [ ] Identified the one place where correctness matters most (no double-booking / no double-charging) and solved it with a real mechanism (lock + TTL + DB-level guarantee), not just "the database handles it"
+- [ ] Chose SQL/NoSQL and monolith/microservices with a stated reason **and named what the rejected option would have given you**, not by default habit
+- [ ] Identified the one place where correctness matters most (no double-booking / no double-charging) and solved it with a real mechanism (lock + TTL + DB-level guarantee), narrating why each weaker option on the maturity ladder was rejected along the way
 - [ ] Picked 1-3 deep dives tied directly back to an unmet non-functional requirement
 - [ ] Used back-of-envelope numbers only where they changed a decision
 - [ ] Explicitly called out what's out of scope
+- [ ] **Self-check before finishing:** if every "why I chose X" sentence in your answer could be deleted and moved into one bulleted list at the end without losing anything, you backloaded your tradeoffs — go back and fold at least one rejected alternative into each major decision instead

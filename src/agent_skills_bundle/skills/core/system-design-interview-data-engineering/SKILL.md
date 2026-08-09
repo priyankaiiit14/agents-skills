@@ -1,7 +1,7 @@
 ---
 name: system-design-interview-data-engineering
-description: Use this skill when preparing for or walking through a data engineering system design interview (e.g., 'design a data ingestion pipeline', 'design a real-time analytics platform', 'design a data warehouse for X', 'design a CDC pipeline'). Provides a repeatable 6-step framework — requirements gathering, pipeline design (batch vs. streaming, Lambda/Kappa/Lakehouse architecture, orchestration), data modeling (star/snowflake, medallion layers, SCD types), storage and file format (Parquet/Avro/Delta/Iceberg, partitioning/bucketing/clustering), data quality and observability, and scalability/backfills/idempotency. Do NOT use this for web-service, API, or general distributed-systems interview questions — use the general system design interview skill for those instead.
-
+description: "Use this skill when preparing for or walking through a data engineering system design interview (e.g., 'design a data ingestion pipeline', 'design a real-time analytics platform', 'design a data warehouse for X', 'design a CDC pipeline'). Provides a repeatable 6-step framework — requirements gathering, pipeline design (batch vs. streaming, Lambda/Kappa/Lakehouse architecture, orchestration), data modeling (star/snowflake, medallion layers, SCD types), storage and file format (Parquet/Avro/Delta/Iceberg, partitioning/bucketing/clustering), data quality and observability, and scalability/backfills/idempotency. Do NOT use this for web-service, API, or general distributed-systems interview questions — use the general system design interview skill for those instead."
+license: Personal use
 ---
 
 # Data Engineering System Design Interview Framework
@@ -9,6 +9,20 @@ description: Use this skill when preparing for or walking through a data enginee
 A repeatable 6-step process for data pipeline / data platform system design interviews. This is a sibling to the general (web-service) system design framework — same *shape* of process, different *content*, because DE interviews are graded on data modeling, storage, and correctness rather than APIs and service architecture.
 
 **Core mindset to state out loud early:** if you ask 10 senior data engineers to design the same ingestion pipeline, you'll get 10 valid architectures, each trading off cost, latency, complexity, or failure handling differently. There is rarely one "correct" answer — the interview is graded on whether you can *justify* your tradeoffs, not on whether you land on a specific tool.
+
+## Non-negotiable rule: tradeoffs are said in the same breath as the decision, never saved for a wrap-up section
+
+The single most common way this framework gets executed badly: producing a clean design where every step states a conclusion ("I'll use Kappa," "I'll partition by post_id," "I'll use Pinot/ClickHouse for serving"), and then bolting a "Tradeoffs" section on at the very end as a separate list. That reads as reciting facts, not reasoning live — by the time the justification shows up, every decision already sounded settled and unquestioned.
+
+The fix is a sentence template, applied **at the moment each decision is made**, not deferred:
+
+> "I'm choosing **[X]** over **[Y and/or Z]** because **[the requirement from Step 1 that X satisfies and Y/Z don't]**. The cost of this choice is **[what you give up]**, which I'm accepting because **[why that cost is tolerable given the requirements]**."
+
+Concretely, this means every one of the 6 steps below should produce a decision *and* a same-breath rejection of at least one real alternative — not a monolithic list of tradeoffs saved for the end. A dedicated tradeoffs recap at the end is fine as a closer, but it should be a *repeat* of things you already justified live, not the first time tradeoffs are mentioned.
+
+Bad (backloaded): *"I would use a Kappa architecture... [8 paragraphs of confident, unqualified decisions]... §10 Tradeoffs: Kappa vs Lambda: Kappa provides one processing path..."*
+
+Good (inline): *"I'm going with Kappa over Lambda here — Lambda would let me correct historical aggregates with a separate, simpler batch job, but it means maintaining two codepaths that can silently drift from each other. Since freshness requirements are sub-minute and we already need replay for the streaming path anyway, I'd rather pay for replay-based corrections than maintain two logic paths."*
 
 ---
 
@@ -35,6 +49,8 @@ Draw the same in-scope/out-of-scope line as any system design interview — say 
   - **Lakehouse architecture** — unify a data lake with warehouse-like transactional/schema guarantees (Delta/Iceberg/Hudi on top of object storage). Justify when you want to avoid maintaining a separate warehouse and lake copy of the same data.
 - **Orchestration tool** — name one (Airflow, Prefect, Dagster, Mage) and justify by the property that matters for this problem (DAG complexity, dynamic task generation, backfill ergonomics, observability), not by familiarity alone.
 
+> **Say the reject, not just the pick:** for the architecture pattern specifically, name the runner-up and the one concrete thing it would have given you that you're giving up (e.g., "Lambda would isolate corrections in a separate batch job, but I'm not paying for two codepaths when replay already solves that in Kappa").
+
 ---
 
 ## 3. Data Modeling (~10 min)
@@ -53,6 +69,8 @@ This is the DE analogue of "core entities" in a service design interview, but fa
   - **Type 2** — new row per change, with effective-dated versions. Use when you need to preserve history for point-in-time correctness (e.g., "what was the customer's address when this order shipped").
   - **Type 3** — limited history via extra columns (e.g., `previous_value`). Rarely the right default; mention only if a bounded, small amount of change history is genuinely sufficient.
 
+> **Say the reject, not just the pick:** for the schema choice specifically — "snowflake would save storage and enforce normalization, but I'm accepting the extra storage cost of star schema because BI query simplicity matters more here."
+
 ---
 
 ## 4. Storage and File Format (~5 min)
@@ -63,6 +81,8 @@ This is the DE analogue of "core entities" in a service design interview, but fa
   - **Bucketing** — hash-based grouping within partitions to optimize joins/aggregations on a specific high-cardinality key.
   - **Liquid clustering** (Databricks-specific) — dynamically reclusters data without rigid partition boundaries, avoiding the "wrong partition key chosen upfront" problem.
   - Say explicitly: *"This choice directly affects both query cost and query latency, so I'd pick partition keys based on the most common filter predicate from Step 1's access patterns."*
+
+> **Say the reject, not just the pick:** naming a partition key by itself isn't enough — name the alternative key you rejected and the failure mode it would have caused (e.g., "partitioning by topic alone would create a hot partition the moment something goes viral, so I'm partitioning by a stable key like post_id/author_id instead and handling topic filtering at query time").
 
 ---
 
@@ -90,18 +110,21 @@ This is the DE analogue of "handling surge/contention" in service design — the
   - Deduplication keyed on an idempotency/event ID for streaming ingestion.
 - **DataOps practices** — CI/CD for pipeline code, version-controlled schema migrations, environment parity (dev/staging/prod), and rollback strategy if a bad deploy corrupts a table.
 
+> **Say the reject, not just the pick:** for delivery semantics specifically — "true exactly-once end-to-end is a stronger claim than most systems can honestly make; I'm targeting effectively-once via idempotent upserts instead of claiming a guarantee I can't back up."
+
 ---
 
 ## Quick Checklist to Run Through Live
 
 - [ ] Established freshness/latency requirement before picking batch vs. streaming
-- [ ] Named an architecture pattern (Lambda / Kappa / Lakehouse) and justified it against the requirements, not by default habit
+- [ ] Named an architecture pattern (Lambda / Kappa / Lakehouse) **and named the runner-up alternative and what it would have cost/given up**, in the same breath as the decision — not deferred to a closing tradeoffs list
 - [ ] Picked an orchestration tool and justified by a specific property it offers
-- [ ] Chose star vs. snowflake and justified it
+- [ ] Chose star vs. snowflake and justified it, including what the other option would have bought you
 - [ ] Placed fact/dimension tables in a specific medallion layer (usually silver) and explained why
 - [ ] Chose an SCD type per dimension based on whether historical accuracy is actually needed
-- [ ] Named a file format and a storage optimization strategy (partitioning/bucketing/clustering) tied to the actual access pattern
+- [ ] Named a file format and a storage optimization strategy (partitioning/bucketing/clustering) tied to the actual access pattern, and named the partition key you rejected and why
 - [ ] Defined concrete data quality checks and at least one explicit SLA
 - [ ] Addressed 10x scale by naming the actual bottleneck, not a generic "scale it up"
 - [ ] Explained how backfills work and how idempotency is guaranteed (upsert/merge, partition overwrite, or dedup key)
 - [ ] Explicitly called out what's out of scope
+- [ ] **Self-check before finishing:** if every "why I chose X" sentence in your answer could be deleted and moved into one bulleted list at the end without losing anything, you backloaded your tradeoffs — go back and fold at least one rejected alternative into each major decision instead
