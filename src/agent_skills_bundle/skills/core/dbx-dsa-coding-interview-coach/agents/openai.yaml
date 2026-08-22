@@ -1,0 +1,4 @@
+interface:
+  display_name: "DBX DSA Coding Interview Coach"
+  short_description: "Practice and live pair-programming coach"
+  default_prompt: "Use $dbx-dsa-coding-interview-coach to run a realistic 60-minute mock interview."
