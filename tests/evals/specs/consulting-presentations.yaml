@@ -1,0 +1,17 @@
+skill: consulting-presentations
+input: |
+  Create a six-slide executive presentation outline for a COO deciding whether to
+  automate manual insurance-claims triage. Use only these facts: 100,000 claims per
+  year; 60% are routine; manual triage takes 12 minutes per claim; automation can
+  handle 80% of routine claims; implementation costs $450,000; expected annual
+  savings are $900,000; rollout has three phases over six months.
+
+  Provide each slide's title, essential content, and visual direction. Do not create
+  a presentation file.
+rubric: |
+  - The response contains exactly six slides, each centered on one core message.
+  - Slide titles state conclusions or decisions rather than generic topics, and the titles form a coherent story when read in sequence.
+  - The deck provides an executive recommendation early and ends with a decision, action, or rollout-oriented slide.
+  - Copy is concise: slides use short supporting points rather than long paragraphs or repetitive prose.
+  - Every analytical slide includes a relevant visual direction such as a chart, process diagram, comparison table, or timeline, and the visual is intended to carry the main argument.
+  - All quantitative claims are traceable to the supplied facts or correctly calculated from them; no unsupported facts are presented as real.

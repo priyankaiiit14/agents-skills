@@ -204,6 +204,7 @@ description: One-line description of what this skill does and when to invoke it.
 | Skill | Purpose |
 | --- | --- |
 | `caveman` | Ultra-compressed communication mode, cuts token usage ~75%. |
+| `consulting-presentations` | Create concise, visual-first decks with executive consulting-style storytelling. |
 | `context-audit` | Audit your Claude Code setup for token waste and context bloat. |
 | `diagnose` | Disciplined diagnosis loop for hard bugs and performance regressions. |
 | `fewer-permission-prompts` | Add allow rules to reduce repetitive permission prompts. |
